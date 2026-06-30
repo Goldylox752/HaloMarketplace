@@ -179,3 +179,12 @@ app.listen(PORT, () => {
     console.log("===================================");
 
 });
+
+const paymentRoutes = require("./routes/paymentRoutes");
+
+// Stripe webhook (must come before express.json)
+app.use("/api/payments", paymentRoutes);
+
+// JSON parser for the rest of your API
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
