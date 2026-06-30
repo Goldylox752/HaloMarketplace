@@ -1,0 +1,220 @@
+// ==========================================
+// models/Order.js
+// Halo Marketplace Order Model
+// ==========================================
+
+const mongoose = require("mongoose");
+
+const orderItemSchema = new mongoose.Schema({
+
+    product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true
+    },
+
+    vendor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+
+    title: {
+        type: String,
+        required: true
+    },
+
+    image: {
+        type: String,
+        default: ""
+    },
+
+    sku: {
+        type: String,
+        default: ""
+    },
+
+    quantity: {
+        type: Number,
+        required: true,
+        min: 1
+    },
+
+    price: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+
+    subtotal: {
+        type: Number,
+        required: true
+    }
+
+}, { _id: false });
+
+const orderSchema = new mongoose.Schema({
+
+    orderNumber: {
+        type: String,
+        required: true,
+        unique: true
+    },
+
+    customer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+
+    items: [orderItemSchema],
+
+    shippingAddress: {
+
+        fullName: String,
+
+        phone: String,
+
+        address1: String,
+
+        address2: String,
+
+        city: String,
+
+        province: String,
+
+        postalCode: String,
+
+        country: {
+            type: String,
+            default: "Canada"
+        }
+
+    },
+
+    billingAddress: {
+
+        fullName: String,
+
+        phone: String,
+
+        address1: String,
+
+        address2: String,
+
+        city: String,
+
+        province: String,
+
+        postalCode: String,
+
+        country: {
+            type: String,
+            default: "Canada"
+        }
+
+    },
+
+    subtotal: {
+        type: Number,
+        required: true
+    },
+
+    shippingCost: {
+        type: Number,
+        default: 0
+    },
+
+    tax: {
+        type: Number,
+        default: 0
+    },
+
+    discount: {
+        type: Number,
+        default: 0
+    },
+
+    total: {
+        type: Number,
+        required: true
+    },
+
+    paymentMethod: {
+        type: String,
+        enum: [
+            "stripe",
+            "paypal",
+            "cash"
+        ],
+        default: "stripe"
+    },
+
+    paymentStatus: {
+        type: String,
+        enum: [
+            "pending",
+            "paid",
+            "failed",
+            "refunded"
+        ],
+        default: "pending"
+    },
+
+    stripePaymentIntentId: {
+        type: String,
+        default: ""
+    },
+
+    status: {
+        type: String,
+        enum: [
+            "pending",
+            "processing",
+            "packed",
+            "shipped",
+            "delivered",
+            "cancelled",
+            "returned"
+        ],
+        default: "pending"
+    },
+
+    trackingNumber: {
+        type: String,
+        default: ""
+    },
+
+    shippingCarrier: {
+        type: String,
+        default: ""
+    },
+
+    notes: {
+        type: String,
+        default: ""
+    }
+
+}, {
+    timestamps: true
+});
+
+// ==========================================
+// Indexes
+// ==========================================
+
+orderSchema.index({ orderNumber: 1 });
+
+orderSchema.index({ customer: 1 });
+
+orderSchema.index({ status: 1 });
+
+orderSchema.index({ paymentStatus: 1 });
+
+orderSchema.index({ createdAt: -1 });
+
+// ==========================================
+// Export
+// ==========================================
+
+module.exports = mongoose.model("Order", orderSchema);
