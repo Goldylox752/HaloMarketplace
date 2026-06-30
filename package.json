@@ -1,0 +1,54 @@
+{
+  "name": "halo-marketplace-backend",
+  "version": "1.0.0",
+  "description": "Halo Marketplace Backend API",
+  "private": true,
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "marketplace",
+    "express",
+    "stripe",
+    "postgresql",
+    "prisma",
+    "ecommerce"
+  ],
+  "author": "Halo Marketplace",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^2.5.1",
+    "compression": "^1.7.5",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.10.0",
+    "prisma": "^6.0.0",
+    "stripe": "^18.0.0",
+    "uuid": "^11.0.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.18.0",
+    "nodemon": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
