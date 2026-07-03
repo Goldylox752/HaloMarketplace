@@ -1,62 +1,65 @@
-// ========================================
-// Halo Marketplace
+// ==========================================
+// HALO MARKETPLACE
 // index.js
-// Main Server Entry Point
-// ========================================
+// ==========================================
 
 require("dotenv").config();
 
 const express = require("express");
-const mongoose = require("mongoose");
 const helmet = require("helmet");
 const compression = require("compression");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const path = require("path");
 const morgan = require("morgan");
+const path = require("path");
+
+const { PrismaClient } = require("@prisma/client");
+const logger = require("./utils/logger");
 
 const app = express();
+const prisma = new PrismaClient();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
-// ========================================
-// Security
-// ========================================
+// ==========================================
+// SECURITY
+// ==========================================
+
+app.set("trust proxy", 1);
 
 app.use(helmet());
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: process.env.CLIENT_URL,
     credentials: true
 }));
 
-// ========================================
-// Middleware
-// ========================================
+// ==========================================
+// MIDDLEWARE
+// ==========================================
 
 app.use(express.json({
     limit: "10mb"
 }));
 
 app.use(express.urlencoded({
-    extended: true
+    extended: true,
+    limit: "10mb"
 }));
 
 app.use(cookieParser());
-
 app.use(compression());
-
 app.use(morgan("dev"));
 
-// ========================================
-// Static Folder
-// ========================================
+// ==========================================
+// STATIC FILES
+// ==========================================
 
 app.use(express.static(path.join(__dirname, "public")));
 
-// ========================================
-// Routes
-// ========================================
+// ==========================================
+// ROUTES
+// ==========================================
 
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
@@ -65,102 +68,145 @@ app.use("/api/categories", require("./routes/categories"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/vendors", require("./routes/vendors"));
-app.use("/api/upload", require("./routes/upload"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/messages", require("./routes/messages"));
 app.use("/api/search", require("./routes/search"));
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/uploads", require("./routes/uploads"));
 
-// ========================================
-// Health Check
-// ========================================
+// ==========================================
+// HEALTH CHECK
+// ==========================================
 
-app.get("/api/health", (req, res) => {
-    res.status(200).json({
-        success: true,
-        app: "Halo Marketplace",
-        status: "Running",
-        uptime: process.uptime(),
-        timestamp: new Date()
-    });
+app.get("/api/health", async (req, res) => {
+
+    try {
+
+        await prisma.$queryRaw`SELECT 1`;
+
+        res.json({
+
+            success: true,
+
+            application: "Halo Marketplace",
+
+            status: "Running",
+
+            database: "Connected",
+
+            uptime: process.uptime(),
+
+            timestamp: new Date()
+
+        });
+
+    } catch (err) {
+
+        res.status(500).json({
+
+            success: false,
+
+            database: "Disconnected"
+
+        });
+
+    }
+
 });
 
-// ========================================
-// SPA Routing
-// ========================================
+// ==========================================
+// SPA
+// ==========================================
 
 app.get("*", (req, res) => {
+
     res.sendFile(path.join(__dirname, "public", "index.html"));
+
 });
 
-// ========================================
-// Error Handler
-// ========================================
+// ==========================================
+// ERROR HANDLER
+// ==========================================
 
 app.use((err, req, res, next) => {
 
-    console.error(err.stack);
+    logger.error(err.stack || err.message);
 
     res.status(err.status || 500).json({
+
         success: false,
+
         message: err.message || "Internal Server Error"
+
     });
 
 });
 
-// ========================================
-// MongoDB Connection
-// ========================================
+// ==========================================
+// START SERVER
+// ==========================================
 
-mongoose
-.connect(process.env.MONGO_URI, {
+async function startServer() {
 
-})
-.then(() => {
+    try {
 
-    console.log("================================");
-    console.log("MongoDB Connected");
-    console.log("================================");
+        await prisma.$connect();
 
-    app.listen(PORT, () => {
+        logger.success("Database Connected");
 
-        console.log("================================");
-        console.log(`Halo Marketplace Running`);
-        console.log(`Server: http://localhost:${PORT}`);
-        console.log(`Environment: ${process.env.NODE_ENV}`);
-        console.log("================================");
+        app.listen(PORT, () => {
 
-    });
+            logger.success("====================================");
+            logger.success("Halo Marketplace");
+            logger.success(`Running on http://localhost:${PORT}`);
+            logger.success(`Environment: ${process.env.NODE_ENV}`);
+            logger.success("====================================");
 
-})
-.catch(err => {
+        });
 
-    console.error("MongoDB Connection Failed");
-    console.error(err);
+    } catch (err) {
 
-    process.exit(1);
+        logger.error(err.message);
+
+        process.exit(1);
+
+    }
+
+}
+
+startServer();
+
+// ==========================================
+// SHUTDOWN
+// ==========================================
+
+process.on("SIGINT", async () => {
+
+    logger.warn("Server shutting down...");
+
+    await prisma.$disconnect();
+
+    process.exit(0);
 
 });
 
-// ========================================
-// Handle Unhandled Rejections
-// ========================================
+process.on("SIGTERM", async () => {
+
+    await prisma.$disconnect();
+
+    process.exit(0);
+
+});
 
 process.on("unhandledRejection", err => {
 
-    console.error(err);
-
-    process.exit(1);
+    logger.error(err.stack || err.message);
 
 });
 
-// ========================================
-// Handle Uncaught Exceptions
-// ========================================
-
 process.on("uncaughtException", err => {
 
-    console.error(err);
+    logger.error(err.stack || err.message);
 
     process.exit(1);
 
