@@ -1,0 +1,12 @@
+model Product {
+  id        String   @id @default(cuid())
+  title     String
+  price     Int
+  image     String
+  rating    Float?
+  seller    String?
+  location  String?
+  verified  Boolean  @default(false)
+  shipping  String?
+  createdAt DateTime @default(now())
+}
