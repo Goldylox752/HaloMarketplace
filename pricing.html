@@ -1,1 +1,473 @@
-pricing
+<!-- pricing.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pricing | Halo Marketplace</title>
+
+
+<style>
+
+* {
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+
+body {
+
+    margin:0;
+    background:#f5f7fb;
+
+}
+
+
+
+header {
+
+    background:#111827;
+    color:white;
+    padding:25px;
+    text-align:center;
+
+}
+
+
+
+.logo {
+
+    font-size:28px;
+    font-weight:bold;
+
+}
+
+
+
+.container {
+
+    max-width:1200px;
+    margin:auto;
+    padding:50px 25px;
+
+}
+
+
+
+h1 {
+
+    text-align:center;
+    font-size:40px;
+
+}
+
+
+
+.subtitle {
+
+    text-align:center;
+    color:#666;
+    margin-bottom:40px;
+
+}
+
+
+
+.pricing {
+
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fit,minmax(280px,1fr));
+
+    gap:25px;
+
+}
+
+
+
+.card {
+
+    background:white;
+    padding:35px;
+    border-radius:18px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+}
+
+
+
+.card.featured {
+
+    transform:scale(1.03);
+
+}
+
+
+
+.plan {
+
+    font-size:24px;
+    font-weight:bold;
+
+}
+
+
+
+.price {
+
+    font-size:38px;
+    font-weight:bold;
+    margin:20px 0;
+
+}
+
+
+
+.price span {
+
+    font-size:16px;
+    color:#666;
+
+}
+
+
+
+ul {
+
+    padding:0;
+    list-style:none;
+
+}
+
+
+
+li {
+
+    margin:15px 0;
+
+}
+
+
+
+li::before {
+
+    content:"✓ ";
+    color:green;
+    font-weight:bold;
+
+}
+
+
+
+button {
+
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#111827;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+
+}
+
+
+
+button:hover {
+
+    opacity:.9;
+
+}
+
+
+
+.badge {
+
+    display:inline-block;
+    background:#dcfce7;
+    color:#166534;
+    padding:5px 12px;
+    border-radius:20px;
+    font-size:13px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<div class="logo">
+Halo Marketplace
+</div>
+
+</header>
+
+
+
+<div class="container">
+
+
+<h1>
+Simple Marketplace Pricing
+</h1>
+
+
+<div class="subtitle">
+Start selling. Upgrade as your business grows.
+</div>
+
+
+
+
+<div class="pricing">
+
+
+
+
+
+<div class="card">
+
+
+<div class="plan">
+Buyer
+</div>
+
+
+<div class="price">
+Free
+</div>
+
+
+<ul>
+
+<li>Browse products</li>
+
+<li>Message sellers</li>
+
+<li>Save favorites</li>
+
+<li>Secure checkout</li>
+
+</ul>
+
+
+<button onclick="signup()">
+
+Create Account
+
+</button>
+
+
+</div>
+
+
+
+
+
+
+<div class="card">
+
+
+<div class="plan">
+Seller Starter
+</div>
+
+
+<div class="price">
+
+$29
+<span>/month</span>
+
+</div>
+
+
+
+<ul>
+
+<li>50 active listings</li>
+
+<li>Seller profile</li>
+
+<li>Basic analytics</li>
+
+<li>Customer messaging</li>
+
+<li>Stripe payments</li>
+
+</ul>
+
+
+
+<button onclick="subscribe('starter')">
+
+Start Selling
+
+</button>
+
+
+</div>
+
+
+
+
+
+
+<div class="card featured">
+
+
+<div class="badge">
+Most Popular
+</div>
+
+
+<div class="plan">
+Seller Pro
+</div>
+
+
+
+<div class="price">
+
+$99
+<span>/month</span>
+
+</div>
+
+
+
+<ul>
+
+<li>Unlimited listings</li>
+
+<li>AI listing assistant</li>
+
+<li>Featured placement</li>
+
+<li>Advanced analytics</li>
+
+<li>Priority support</li>
+
+</ul>
+
+
+
+<button onclick="subscribe('pro')">
+
+Upgrade Pro
+
+</button>
+
+
+
+</div>
+
+
+
+
+
+
+
+<div class="card">
+
+
+<div class="plan">
+Business
+</div>
+
+
+
+<div class="price">
+
+$299
+<span>/month</span>
+
+</div>
+
+
+
+
+<ul>
+
+<li>Multiple staff accounts</li>
+
+<li>Storefront branding</li>
+
+<li>Advertising tools</li>
+
+<li>Sales reports</li>
+
+<li>Dedicated support</li>
+
+</ul>
+
+
+
+<button onclick="subscribe('business')">
+
+Contact Sales
+
+</button>
+
+
+</div>
+
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<script>
+
+
+function signup(){
+
+window.location.href =
+"/register.html";
+
+}
+
+
+
+
+async function subscribe(plan){
+
+
+alert(
+"Starting "+plan+" subscription"
+);
+
+
+// Stripe Checkout API goes here
+
+// POST /api/stripe/create-checkout-session
+
+
+}
+
+
+
+</script>
+
+
+
+</body>
+
+</html>
