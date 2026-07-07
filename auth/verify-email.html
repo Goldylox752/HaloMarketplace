@@ -1,0 +1,239 @@
+<!-- verify-email.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Verify Email | Halo Marketplace</title>
+
+
+<style>
+
+* {
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+
+body {
+
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#f5f7fb;
+
+}
+
+
+.card {
+
+    width:400px;
+    background:white;
+    padding:40px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+
+}
+
+
+h1 {
+
+    margin-bottom:15px;
+
+}
+
+
+p {
+
+    color:#666;
+
+}
+
+
+.status {
+
+    margin-top:25px;
+    font-weight:bold;
+
+}
+
+
+.success {
+
+    color:green;
+
+}
+
+
+.error {
+
+    color:red;
+
+}
+
+
+button {
+
+    margin-top:20px;
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    background:#111827;
+    color:white;
+    cursor:pointer;
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="card">
+
+<h1>
+Halo Marketplace
+</h1>
+
+
+<p>
+Verifying your email address...
+</p>
+
+
+<div 
+id="status"
+class="status">
+Please wait...
+</div>
+
+
+<button 
+onclick="goLogin()">
+
+Continue Login
+
+</button>
+
+
+</div>
+
+
+
+<script type="module">
+
+
+import { createClient } 
+from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+
+
+const supabaseUrl =
+"YOUR_SUPABASE_URL";
+
+
+const supabaseKey =
+"YOUR_SUPABASE_ANON_KEY";
+
+
+
+const supabase =
+createClient(
+supabaseUrl,
+supabaseKey
+);
+
+
+
+async function verifyEmail(){
+
+
+const status =
+document.getElementById("status");
+
+
+
+const {
+data,
+error
+} =
+await supabase.auth.getSession();
+
+
+
+if(error){
+
+status.className =
+"status error";
+
+status.innerHTML =
+"Verification failed.";
+
+return;
+
+}
+
+
+
+if(data.session){
+
+
+status.className =
+"status success";
+
+status.innerHTML =
+"✓ Email verified successfully!";
+
+
+localStorage.setItem(
+"halo_verified",
+"true"
+);
+
+
+
+}else{
+
+
+status.className =
+"status error";
+
+status.innerHTML =
+"Please verify using the email link first.";
+
+}
+
+
+
+}
+
+
+
+window.goLogin = function(){
+
+window.location.href =
+"/login.html";
+
+}
+
+
+
+verifyEmail();
+
+
+</script>
+
+
+</body>
+
+</html>
