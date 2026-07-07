@@ -1,7 +1,7 @@
 // ========================================
 // Halo Marketplace
 // app.js
-// Part 1A
+// Production Express Application
 // ========================================
 
 require("dotenv").config();
@@ -14,33 +14,30 @@ const cors = require("cors");
 const compression = require("compression");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
-
 const rateLimit = require("express-rate-limit");
 
 const app = express();
+
 
 // ========================================
 // TRUST PROXY
 // ========================================
 
-// Required when running behind
-// Render, Railway, Nginx, Cloudflare, etc.
-
 app.set("trust proxy", 1);
 
+
 // ========================================
-// SECURITY HEADERS
+// SECURITY
 // ========================================
 
 app.use(
     helmet({
-
-        crossOriginResourcePolicy: {
-            policy: "cross-origin"
+        crossOriginResourcePolicy:{
+            policy:"cross-origin"
         }
-
     })
 );
+
 
 // ========================================
 // CORS
@@ -56,34 +53,31 @@ const allowedOrigins = [
 
 ].filter(Boolean);
 
-app.use(
 
+app.use(
     cors({
 
-        origin(origin, callback) {
+        origin:(origin,callback)=>{
 
-            // Allow Postman/mobile apps
-            if (!origin) {
-
-                return callback(null, true);
-
+            if(!origin){
+                return callback(null,true);
             }
 
-            if (allowedOrigins.includes(origin)) {
 
-                return callback(null, true);
-
+            if(allowedOrigins.includes(origin)){
+                return callback(null,true);
             }
+
 
             return callback(
-                new Error("CORS not allowed.")
+                new Error("CORS blocked")
             );
 
         },
 
-        credentials: true,
+        credentials:true,
 
-        methods: [
+        methods:[
             "GET",
             "POST",
             "PUT",
@@ -92,38 +86,34 @@ app.use(
             "OPTIONS"
         ],
 
-        allowedHeaders: [
+        allowedHeaders:[
             "Content-Type",
             "Authorization"
         ]
 
     })
-
 );
 
+
 // ========================================
-// COMPRESSION
+// PERFORMANCE
 // ========================================
 
 app.use(compression());
+
 
 // ========================================
 // LOGGING
 // ========================================
 
 app.use(
-
     morgan(
-
         process.env.NODE_ENV === "production"
-
-            ? "combined"
-
-            : "dev"
-
+        ?"combined"
+        :"dev"
     )
-
 );
+
 
 // ========================================
 // COOKIES
@@ -131,463 +121,310 @@ app.use(
 
 app.use(cookieParser());
 
+
 // ========================================
 // STRIPE WEBHOOK
-// IMPORTANT:
-//
-// Must come BEFORE express.json()
-// because Stripe requires the raw body.
-//
-// Create routes/webhookRoutes.js
+// MUST BE BEFORE JSON
 // ========================================
 
 app.use(
 
-    "/api/webhooks/stripe",
+"/api/webhooks/stripe",
 
-    express.raw({
+express.raw({
+    type:"application/json"
+}),
 
-        type: "application/json"
-
-    }),
-
-    require("./routes/webhookRoutes")
+require("./routes/webhookRoutes")
 
 );
+
 
 // ========================================
 // BODY PARSER
 // ========================================
 
 app.use(
-
-    express.json({
-
-        limit: "10mb"
-
-    })
-
+express.json({
+    limit:"10mb"
+})
 );
+
 
 app.use(
-
-    express.urlencoded({
-
-        extended: true,
-
-        limit: "10mb"
-
-    })
-
+express.urlencoded({
+    extended:true,
+    limit:"10mb"
+})
 );
 
+
 // ========================================
-// API RATE LIMITER
+// RATE LIMIT
 // ========================================
 
-const apiLimiter = rateLimit({
+const limiter = rateLimit({
 
-    windowMs: 15 * 60 * 1000,
+windowMs:
+15 * 60 * 1000,
 
-    max:
 
-        process.env.NODE_ENV === "production"
+max:
 
-            ? 250
+process.env.NODE_ENV === "production"
+?250
+:5000,
 
-            : 5000,
 
-    standardHeaders: true,
+standardHeaders:true,
 
-    legacyHeaders: false,
+legacyHeaders:false,
 
-    message: {
 
-        success: false,
-
-        message:
-
-            "Too many requests. Please try again later."
-
-    }
+message:{
+    success:false,
+    message:"Too many requests."
+}
 
 });
 
-app.use("/api", apiLimiter);
 
-// ========================================
-// Continue in Part 1B
-// ========================================
+app.use("/api",limiter);
 
-module.exports = app;
-
-
-// ========================================
-// Halo Marketplace
-// app.js
-// Part 1B
-// ========================================
 
 // ========================================
 // STATIC FILES
 // ========================================
 
-// Uploaded images
 app.use(
-    "/uploads",
-    express.static(
-        path.join(__dirname, "uploads")
-    )
+
+"/uploads",
+
+express.static(
+path.join(__dirname,"uploads")
+)
+
 );
 
-// Public assets
+
 app.use(
-    express.static(
-        path.join(__dirname, "public")
-    )
+
+express.static(
+
+path.join(
+__dirname,
+"public"
+)
+
+)
+
 );
+
 
 // ========================================
 // HEALTH CHECK
 // ========================================
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health",(req,res)=>{
 
-    res.status(200).json({
 
-        success: true,
+res.json({
 
-        application: "Halo Marketplace",
+success:true,
 
-        version: process.env.npm_package_version || "1.0.0",
+application:"Halo Marketplace",
 
-        environment:
-            process.env.NODE_ENV || "development",
+version:"1.0.0",
 
-        uptime: process.uptime(),
+environment:
+process.env.NODE_ENV || "development",
 
-        timestamp: new Date(),
+database:"Supabase PostgreSQL",
 
-        database: "Supabase PostgreSQL"
+uptime:process.uptime(),
 
-    });
+timestamp:new Date()
+
+});
+
 
 });
 
+
 // ========================================
-// ROOT
+// WEBSITE
 // ========================================
 
-app.get("/", (req, res) => {
+app.get("/",(req,res)=>{
 
-    res.sendFile(
 
-        path.join(
-            __dirname,
-            "public",
-            "index.html"
-        )
+res.sendFile(
 
-    );
+path.join(
+__dirname,
+"public",
+"index.html"
+)
+
+);
+
 
 });
+
 
 // ========================================
 // API ROUTES
 // ========================================
 
-app.use(
-    "/api/auth",
-    require("./routes/authRoutes")
-);
+
+const routes = {
+
+auth:"authRoutes",
+
+users:"userRoutes",
+
+vendors:"vendorRoutes",
+
+products:"productRoutes",
+
+categories:"categoryRoutes",
+
+brands:"brandRoutes",
+
+cart:"cartRoutes",
+
+checkout:"checkoutRoutes",
+
+orders:"orderRoutes",
+
+payments:"paymentRoutes",
+
+reviews:"reviewRoutes",
+
+wishlist:"wishlistRoutes",
+
+search:"searchRoutes",
+
+notifications:"notificationRoutes",
+
+admin:"adminRoutes",
+
+messages:"messageRoutes",
+
+chat:"chatRoutes",
+
+analytics:"analyticsRoutes",
+
+coupons:"couponRoutes"
+
+};
+
+
+
+Object.entries(routes).forEach(([pathName,file])=>{
+
 
 app.use(
-    "/api/users",
-    require("./routes/userRoutes")
+
+`/api/${pathName}`,
+
+require(`./routes/${file}`)
+
 );
 
-app.use(
-    "/api/vendors",
-    require("./routes/vendorRoutes")
-);
-
-app.use(
-    "/api/products",
-    require("./routes/productRoutes")
-);
-
-app.use(
-    "/api/categories",
-    require("./routes/categoryRoutes")
-);
-
-app.use(
-    "/api/brands",
-    require("./routes/brandRoutes")
-);
-
-app.use(
-    "/api/cart",
-    require("./routes/cartRoutes")
-);
-
-app.use(
-    "/api/checkout",
-    require("./routes/checkoutRoutes")
-);
-
-app.use(
-    "/api/orders",
-    require("./routes/orderRoutes")
-);
-
-app.use(
-    "/api/payments",
-    require("./routes/paymentRoutes")
-);
-
-app.use(
-    "/api/reviews",
-    require("./routes/reviewRoutes")
-);
-
-app.use(
-    "/api/wishlist",
-    require("./routes/wishlistRoutes")
-);
-
-app.use(
-    "/api/search",
-    require("./routes/searchRoutes")
-);
-
-app.use(
-    "/api/uploads",
-    require("./routes/uploadRoutes")
-);
-
-app.use(
-    "/api/notifications",
-    require("./routes/notificationRoutes")
-);
-
-app.use(
-    "/api/admin",
-    require("./routes/adminRoutes")
-);
-
-// ========================================
-// FUTURE ROUTES
-// ========================================
-
-app.use(
-    "/api/messages",
-    require("./routes/messageRoutes")
-);
-
-app.use(
-    "/api/chat",
-    require("./routes/chatRoutes")
-);
-
-app.use(
-    "/api/analytics",
-    require("./routes/analyticsRoutes")
-);
-
-app.use(
-    "/api/coupons",
-    require("./routes/couponRoutes")
-);
-
-// ========================================
-// Continue in Part 2
-// ========================================
-
-// ========================================
-// Halo Marketplace
-// app.js
-// Part 2
-// ========================================
-
-// ========================================
-// 404 - Route Not Found
-// ========================================
-
-app.use((req, res) => {
-
-    return res.status(404).json({
-
-        success: false,
-
-        error: "Not Found",
-
-        message: `Route ${req.originalUrl} does not exist.`,
-
-        timestamp: new Date()
-
-    });
 
 });
 
+
+
 // ========================================
-// GLOBAL ERROR HANDLER
+// 404
 // ========================================
 
-app.use((err, req, res, next) => {
+app.use((req,res)=>{
 
-    console.error("");
-    console.error("=================================");
-    console.error("APPLICATION ERROR");
-    console.error("=================================");
-    console.error(err.stack || err);
-    console.error("=================================");
-    console.error("");
 
-    // Invalid JSON
-    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+res.status(404).json({
 
-        return res.status(400).json({
+success:false,
 
-            success: false,
-
-            message: "Invalid JSON request body."
-
-        });
-
-    }
-
-    // PostgreSQL Errors
-    if (err.code === "23505") {
-
-        return res.status(409).json({
-
-            success: false,
-
-            message: "A record with that value already exists."
-
-        });
-
-    }
-
-    if (err.code === "23503") {
-
-        return res.status(400).json({
-
-            success: false,
-
-            message: "Referenced record does not exist."
-
-        });
-
-    }
-
-    if (err.code === "22P02") {
-
-        return res.status(400).json({
-
-            success: false,
-
-            message: "Invalid request."
-
-        });
-
-    }
-
-    // Unauthorized
-    if (err.status === 401) {
-
-        return res.status(401).json({
-
-            success: false,
-
-            message: "Unauthorized."
-
-        });
-
-    }
-
-    // Forbidden
-    if (err.status === 403) {
-
-        return res.status(403).json({
-
-            success: false,
-
-            message: "Forbidden."
-
-        });
-
-    }
-
-    // Validation Error
-    if (err.status === 422) {
-
-        return res.status(422).json({
-
-            success: false,
-
-            message: err.message
-
-        });
-
-    }
-
-    // Default Error
-    return res.status(err.status || 500).json({
-
-        success: false,
-
-        message:
-
-            process.env.NODE_ENV === "production"
-
-                ? "Internal Server Error"
-
-                : err.message,
-
-        ...(process.env.NODE_ENV !== "production" && {
-
-            stack: err.stack
-
-        })
-
-    });
+message:
+`Route ${req.originalUrl} not found`
 
 });
 
-// ========================================
-// UNHANDLED REJECTIONS
-// ========================================
-
-process.on("unhandledRejection", (reason) => {
-
-    console.error("");
-
-    console.error("Unhandled Promise Rejection");
-
-    console.error(reason);
 
 });
 
+
+
 // ========================================
-// UNCAUGHT EXCEPTIONS
+// ERROR HANDLER
 // ========================================
 
-process.on("uncaughtException", (err) => {
+app.use((err,req,res,next)=>{
 
-    console.error("");
 
-    console.error("Uncaught Exception");
+console.error(err);
 
-    console.error(err);
 
-    process.exit(1);
+res.status(
+err.status || 500
+)
+
+.json({
+
+success:false,
+
+message:
+
+process.env.NODE_ENV==="production"
+
+?"Internal Server Error"
+
+:err.message
+
 
 });
 
+
+});
+
+
+
 // ========================================
-// EXPORT EXPRESS APP
+// PROCESS ERRORS
+// ========================================
+
+process.on(
+"unhandledRejection",
+err=>{
+
+console.error(
+"Unhandled Rejection:",
+err
+);
+
+});
+
+
+process.on(
+"uncaughtException",
+err=>{
+
+console.error(
+"Uncaught Exception:",
+err
+);
+
+process.exit(1);
+
+});
+
+
+
+// ========================================
+// EXPORT
 // ========================================
 
 module.exports = app;
