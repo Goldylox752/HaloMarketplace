@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Verify Email | Halo Marketplace</title>
+
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+
+body{
+
+font-family:Arial,sans-serif;
+
+background:#f8fafc;
+
+height:100vh;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+}
+
+
+
+.card{
+
+background:white;
+
+padding:40px;
+
+border-radius:25px;
+
+max-width:420px;
+
+width:90%;
+
+text-align:center;
+
+box-shadow:0 20px 50px rgba(0,0,0,.1);
+
+}
+
+
+
+.logo{
+
+font-size:36px;
+
+font-weight:900;
+
+margin-bottom:20px;
+
+}
+
+
+.logo span{
+
+color:#2563eb;
+
+}
+
+
+
+h1{
+
+margin-bottom:15px;
+
+}
+
+
+
+p{
+
+color:#6b7280;
+
+margin-bottom:25px;
+
+}
+
+
+
+button{
+
+background:#2563eb;
+
+color:white;
+
+border:none;
+
+padding:14px 30px;
+
+border-radius:50px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+
+
+.success{
+
+color:#16a34a;
+
+}
+
+
+
+.error{
+
+color:#dc2626;
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="card">
+
+
+<div class="logo">
+
+Halo<span>.</span>
+
+</div>
+
+
+<h1>
+Email Verification
+</h1>
+
+
+<p id="message">
+
+Verifying your account...
+
+</p>
+
+
+
+<button
+
+onclick="goLogin()"
+
+>
+
+Continue Login
+
+</button>
+
+
+</div>
+
+
+
+
+
+<script>
+
+
+const API_URL =
+"/api/v1";
+
+
+
+async function verifyEmail(){
+
+
+
+const params =
+
+new URLSearchParams(
+
+window.location.search
+
+);
+
+
+
+const token =
+
+params.get("token");
+
+
+
+
+
+const message =
+
+document.getElementById(
+"message"
+);
+
+
+
+
+
+if(!token){
+
+
+message.innerHTML =
+"Invalid verification link";
+
+message.className="error";
+
+return;
+
+
+}
+
+
+
+
+
+
+try{
+
+
+
+const response =
+
+await fetch(
+
+`${API_URL}/auth/verify/${token}`
+
+);
+
+
+
+
+
+const data =
+
+await response.json();
+
+
+
+
+
+
+if(data.success){
+
+
+
+message.innerHTML =
+
+"Your email has been verified successfully!";
+
+
+
+message.className="success";
+
+
+
+}else{
+
+
+
+message.innerHTML =
+
+data.message || "Verification failed";
+
+
+
+message.className="error";
+
+
+}
+
+
+
+}
+
+catch(error){
+
+
+message.innerHTML =
+"Server error";
+
+
+message.className="error";
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+function goLogin(){
+
+
+window.location.href =
+"login.html";
+
+
+}
+
+
+
+
+verifyEmail();
+
+
+</script>
+
+
+</body>
+
+</html>
