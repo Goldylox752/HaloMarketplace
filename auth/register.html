@@ -1,0 +1,454 @@
+<!-- register.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Create Account | Halo Marketplace</title>
+
+
+<style>
+
+* {
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+
+body {
+
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#f5f7fb;
+
+}
+
+
+.auth-card {
+
+    width:420px;
+    background:white;
+    padding:40px;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+
+}
+
+
+.logo {
+
+    text-align:center;
+    font-size:28px;
+    font-weight:bold;
+    margin-bottom:10px;
+
+}
+
+
+.subtitle {
+
+    text-align:center;
+    color:#666;
+    margin-bottom:25px;
+
+}
+
+
+input,
+select {
+
+    width:100%;
+    padding:14px;
+    margin-bottom:14px;
+    border:1px solid #ddd;
+    border-radius:8px;
+
+}
+
+
+
+button {
+
+    width:100%;
+    padding:14px;
+    background:#111827;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+
+}
+
+
+
+button:hover {
+
+    opacity:.9;
+
+}
+
+
+
+.message {
+
+    text-align:center;
+    margin-top:15px;
+
+}
+
+
+.error {
+
+    color:red;
+
+}
+
+
+.success {
+
+    color:green;
+
+}
+
+
+
+.links {
+
+    text-align:center;
+    margin-top:20px;
+
+}
+
+
+.links a {
+
+    color:#2563eb;
+    text-decoration:none;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="auth-card">
+
+
+<div class="logo">
+Halo Marketplace
+</div>
+
+
+<div class="subtitle">
+Create your marketplace account
+</div>
+
+
+
+
+<input
+id="name"
+type="text"
+placeholder="Full name"
+/>
+
+
+
+<input
+id="email"
+type="email"
+placeholder="Email address"
+/>
+
+
+
+
+<input
+id="password"
+type="password"
+placeholder="Password"
+/>
+
+
+
+<select id="role">
+
+
+<option value="buyer">
+Buyer Account
+</option>
+
+
+<option value="seller">
+Seller Account
+</option>
+
+
+</select>
+
+
+
+
+<button onclick="register()">
+
+Create Account
+
+</button>
+
+
+
+
+<div id="message" class="message"></div>
+
+
+
+
+<div class="links">
+
+Already have an account?
+
+<a href="/login.html">
+Login
+</a>
+
+</div>
+
+
+
+</div>
+
+
+
+
+<script type="module">
+
+
+import { createClient } 
+from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+
+
+const supabaseUrl =
+"YOUR_SUPABASE_URL";
+
+
+const supabaseKey =
+"YOUR_SUPABASE_ANON_KEY";
+
+
+
+const supabase =
+createClient(
+
+supabaseUrl,
+
+supabaseKey
+
+);
+
+
+
+
+
+
+window.register = async function(){
+
+
+
+const name =
+document.getElementById("name").value.trim();
+
+
+const email =
+document.getElementById("email").value.trim();
+
+
+const password =
+document.getElementById("password").value;
+
+
+const role =
+document.getElementById("role").value;
+
+
+
+const message =
+document.getElementById("message");
+
+
+
+
+
+if(!name || !email || !password){
+
+
+message.className =
+"message error";
+
+
+message.innerHTML =
+"Please complete all fields.";
+
+
+return;
+
+}
+
+
+
+
+
+if(password.length < 6){
+
+
+message.className =
+"message error";
+
+
+message.innerHTML =
+"Password must be at least 6 characters.";
+
+
+return;
+
+}
+
+
+
+
+
+// Create Supabase Auth user
+
+const {
+
+data,
+
+error
+
+} = await supabase.auth.signUp({
+
+
+email,
+
+password,
+
+
+options:{
+
+
+data:{
+
+
+full_name:name,
+
+role:role
+
+
+},
+
+
+emailRedirectTo:
+
+"https://marketplace-2383.vercel.app/verify-email.html"
+
+
+}
+
+
+});
+
+
+
+
+
+if(error){
+
+
+message.className =
+"message error";
+
+
+message.innerHTML =
+error.message;
+
+
+return;
+
+}
+
+
+
+
+
+// Create user profile
+
+
+const {
+
+error:profileError
+
+} = await supabase
+
+.from("profiles")
+
+.insert({
+
+
+id:data.user.id,
+
+email:email,
+
+full_name:name,
+
+role:role
+
+
+});
+
+
+
+
+
+if(profileError){
+
+
+console.log(profileError);
+
+
+}
+
+
+
+
+
+message.className =
+"message success";
+
+
+message.innerHTML =
+"Account created! Check your email to verify your account.";
+
+
+
+}
+
+
+
+
+</script>
+
+
+</body>
+
+</html>
