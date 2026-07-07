@@ -1,1 +1,449 @@
-catagories
+<!-- categories.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Categories | Halo Marketplace</title>
+
+
+<style>
+
+* {
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+
+body {
+
+    margin:0;
+    background:#f5f7fb;
+
+}
+
+
+header {
+
+    background:#111827;
+    color:white;
+    padding:25px;
+
+}
+
+
+.logo {
+
+    font-size:28px;
+    font-weight:bold;
+
+}
+
+
+
+.container {
+
+    max-width:1200px;
+    margin:auto;
+    padding:40px 25px;
+
+}
+
+
+
+h1 {
+
+    text-align:center;
+    font-size:40px;
+
+}
+
+
+
+.subtitle {
+
+    text-align:center;
+    color:#666;
+    margin-bottom:40px;
+
+}
+
+
+
+.search {
+
+    display:flex;
+    justify-content:center;
+    margin-bottom:35px;
+
+}
+
+
+
+input {
+
+    width:100%;
+    max-width:500px;
+    padding:15px;
+    border-radius:10px;
+    border:1px solid #ddd;
+
+}
+
+
+
+.categories {
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+
+    gap:25px;
+
+}
+
+
+
+.card {
+
+    background:white;
+    padding:30px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+    cursor:pointer;
+    transition:.2s;
+
+}
+
+
+
+.card:hover {
+
+    transform:translateY(-5px);
+
+}
+
+
+
+.icon {
+
+    font-size:45px;
+    margin-bottom:15px;
+
+}
+
+
+
+.name {
+
+    font-size:22px;
+    font-weight:bold;
+
+}
+
+
+
+.count {
+
+    color:#666;
+    margin:10px 0;
+
+}
+
+
+
+button {
+
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#111827;
+    color:white;
+    cursor:pointer;
+
+}
+
+
+
+.empty {
+
+    text-align:center;
+    padding:40px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<div class="logo">
+Halo Marketplace
+</div>
+
+</header>
+
+
+
+
+<div class="container">
+
+
+<h1>
+Shop Categories
+</h1>
+
+
+<div class="subtitle">
+Find products from trusted Canadian sellers
+</div>
+
+
+
+<div class="search">
+
+<input
+id="search"
+placeholder="Search categories..."
+onkeyup="filterCategories()"
+/>
+
+</div>
+
+
+
+
+<div id="categories" class="categories"></div>
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+
+const categories = [
+
+
+{
+name:"Electronics",
+icon:"📱",
+count:"2,500+ Products"
+},
+
+
+{
+name:"Vehicles",
+icon:"🚗",
+count:"900+ Products"
+},
+
+
+{
+name:"Home & Garden",
+icon:"🏠",
+count:"1,800+ Products"
+},
+
+
+{
+name:"Fashion",
+icon:"👕",
+count:"3,200+ Products"
+},
+
+
+{
+name:"Tools",
+icon:"🛠️",
+count:"750+ Products"
+},
+
+
+{
+name:"Sports",
+icon:"⚽",
+count:"600+ Products"
+},
+
+
+{
+name:"Gaming",
+icon:"🎮",
+count:"450+ Products"
+},
+
+
+{
+name:"Collectibles",
+icon:"💎",
+count:"300+ Products"
+},
+
+
+{
+name:"Drones",
+icon:"🚁",
+count:"200+ Products"
+},
+
+
+{
+name:"Travel",
+icon:"🧳",
+count:"500+ Products"
+}
+
+
+];
+
+
+
+
+
+function displayCategories(list){
+
+
+const container =
+document.getElementById("categories");
+
+
+container.innerHTML="";
+
+
+
+if(list.length===0){
+
+container.innerHTML =
+`
+<div class="empty">
+No categories found
+</div>
+`;
+
+return;
+
+}
+
+
+
+
+list.forEach(category=>{
+
+
+container.innerHTML +=
+
+`
+
+<div class="card">
+
+
+<div class="icon">
+${category.icon}
+</div>
+
+
+
+<div class="name">
+${category.name}
+</div>
+
+
+
+<div class="count">
+${category.count}
+</div>
+
+
+
+
+<button onclick="browse('${category.name}')">
+
+Browse
+
+</button>
+
+
+
+</div>
+
+`;
+
+});
+
+
+}
+
+
+
+
+
+function filterCategories(){
+
+
+const search =
+
+document
+.getElementById("search")
+.value
+.toLowerCase();
+
+
+
+const filtered = categories.filter(category =>
+
+category.name
+.toLowerCase()
+.includes(search)
+
+);
+
+
+
+displayCategories(filtered);
+
+
+}
+
+
+
+
+
+function browse(category){
+
+
+window.location.href =
+"/browse.html?category="+
+encodeURIComponent(category);
+
+
+}
+
+
+
+
+displayCategories(categories);
+
+
+</script>
+
+
+</body>
+
+</html>
