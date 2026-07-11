@@ -1,38 +1,22 @@
 import Hero from "@/components/Hero";
 import CategoryGrid from "@/components/CategoryGrid";
-import FeaturedSection from "@/components/FeaturedSection";
-import Footer from "@/components/Footer";
+import FeaturedProducts from "@/components/FeaturedProducts";
+import SellerCTA from "@/components/SellerCTA";
+import MarketplaceStats from "@/components/MarketplaceStats";
 
 export default function Home() {
   return (
-    <main>
+    <main className="min-h-screen bg-white">
 
       <Hero />
 
       <CategoryGrid />
 
-      <FeaturedSection />
+      <FeaturedProducts />
 
-      <section className="bg-black text-white py-24">
-        <div className="max-w-7xl mx-auto px-6 text-center">
+      <MarketplaceStats />
 
-          <h2 className="text-5xl font-bold">
-            Start Selling on Halo
-          </h2>
-
-          <p className="mt-5 text-xl text-gray-300">
-            Reach customers across Canada with your own
-            online storefront.
-          </p>
-
-          <button className="mt-8 bg-white text-black px-8 py-4 rounded-xl font-bold">
-            Create Seller Account
-          </button>
-
-        </div>
-      </section>
-
-      <Footer />
+      <SellerCTA />
 
     </main>
   );
