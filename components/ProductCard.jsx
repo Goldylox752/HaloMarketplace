@@ -1,13 +1,20 @@
+import Link from "next/link";
+
+
 export default function ProductCard({
+
+id,
 title,
 price,
 location,
 image
+
 }){
 
-return(
 
-<div className="bg-white rounded-2xl shadow p-6 hover:shadow-xl transition">
+return (
+
+<div className="bg-white rounded-2xl shadow hover:shadow-xl transition p-6">
 
 
 <div className="text-6xl">
@@ -20,23 +27,32 @@ return(
 </h3>
 
 
-<p className="text-indigo-600 font-bold mt-2">
+<p className="mt-2 text-indigo-600 font-bold text-lg">
 {price}
 </p>
 
 
-<p className="text-gray-500 mt-2">
+<p className="mt-2 text-gray-500">
 📍 {location}
 </p>
 
 
-<button className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl">
+
+<Link
+
+href={`/product/${id}`}
+
+className="block mt-5 text-center bg-indigo-600 text-white py-3 rounded-xl"
+
+>
+
 View Product
-</button>
+
+</Link>
 
 
 </div>
 
-);
+)
 
 }
