@@ -2,113 +2,34 @@ export default function Hero(){
 
 return (
 
-<section className="bg-gradient-to-br from-indigo-700 via-purple-700 to-blue-600 text-white">
+<section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-32">
 
-<div className="max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-12 items-center">
+<div className="max-w-7xl mx-auto px-6">
 
-
-<div>
-
-
-<span className="bg-white/20 px-4 py-2 rounded-full text-sm">
-🇨🇦 Canada's AI Marketplace
-</span>
-
-
-<h1 className="mt-6 text-6xl font-bold leading-tight">
-
-Everything You Need.
-<br/>
-
-All In One Place.
-
+<h1 className="text-6xl font-black">
+Canada's AI Marketplace
 </h1>
 
 
-<p className="mt-6 text-xl text-white/90">
-
-Halo Marketplace connects buyers and sellers
-across Canada with secure payments,
-AI-powered recommendations, and real-time messaging.
-
+<p className="mt-6 text-2xl max-w-xl">
+Buy smarter. Sell faster.
+Discover thousands of products from Canadian sellers.
 </p>
 
 
-<div className="mt-10 flex gap-4">
+<div className="mt-10 flex gap-5">
 
-
-<button className="bg-white text-indigo-700 px-8 py-4 rounded-xl font-bold">
-
-Start Shopping
-
+<button className="bg-white text-black px-8 py-4 rounded-xl font-bold">
+Shop Now
 </button>
 
 
 <button className="border border-white px-8 py-4 rounded-xl">
-
-Sell Products
-
+Start Selling
 </button>
 
 
 </div>
-
-
-</div>
-
-
-
-<div className="bg-white/10 backdrop-blur rounded-3xl p-10">
-
-
-<div className="grid grid-cols-2 gap-5">
-
-
-<div className="bg-white/20 rounded-2xl p-6">
-<h3 className="text-4xl font-bold">
-10K+
-</h3>
-<p>
-Products
-</p>
-</div>
-
-
-<div className="bg-white/20 rounded-2xl p-6">
-<h3 className="text-4xl font-bold">
-5K+
-</h3>
-<p>
-Sellers
-</p>
-</div>
-
-
-<div className="bg-white/20 rounded-2xl p-6">
-<h3 className="text-4xl font-bold">
-AI
-</h3>
-<p>
-Shopping
-</p>
-</div>
-
-
-<div className="bg-white/20 rounded-2xl p-6">
-<h3 className="text-4xl font-bold">
-24/7
-</h3>
-<p>
-Marketplace
-</p>
-</div>
-
-
-</div>
-
-
-</div>
-
 
 </div>
 
