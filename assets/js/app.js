@@ -1,12 +1,84 @@
 /* =====================================
 HALO MARKETPLACE
-Production Application JavaScript
+Production Marketplace Application JS
 ===================================== */
 
 
+"use strict";
+
+
+// =====================================
+// CONFIG
+// =====================================
+
+
 const API_URL =
-window.API_URL ||
-"/api/v1";
+window.API_URL || "/api/v1";
+
+
+
+
+
+// =====================================
+// HELPERS
+// =====================================
+
+
+function escapeHTML(value){
+
+return String(value ?? "")
+.replace(/[&<>"']/g,function(char){
+
+return {
+
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#039;"
+
+}[char];
+
+});
+
+}
+
+
+
+
+
+function getJSON(key, fallback=[]){
+
+try{
+
+return JSON.parse(
+localStorage.getItem(key)
+) || fallback;
+
+
+}
+
+catch{
+
+return fallback;
+
+}
+
+}
+
+
+
+
+
+function saveJSON(key,value){
+
+localStorage.setItem(
+key,
+JSON.stringify(value)
+);
+
+}
+
 
 
 
@@ -26,22 +98,20 @@ document.getElementById("toast");
 
 if(!toast){
 
-
 toast =
 document.createElement("div");
 
-
 toast.id="toast";
 
-
 document.body.appendChild(toast);
-
 
 }
 
 
 
-toast.textContent = message;
+toast.textContent =
+message;
+
 
 
 toast.className =
@@ -51,10 +121,7 @@ toast.className =
 
 setTimeout(()=>{
 
-
-toast.className =
-"toast";
-
+toast.className="toast";
 
 },3000);
 
@@ -93,14 +160,11 @@ input.value.trim();
 
 if(!query){
 
-
 showToast(
 "Enter a product to search"
 );
 
-
 return;
-
 
 }
 
@@ -120,23 +184,47 @@ window.location.href =
 
 
 // =====================================
-// PRODUCTS API
+// PRODUCTS
 // =====================================
 
 
 async function loadProducts(){
 
 
+const container =
+document.getElementById(
+"products"
+);
+
+
+
+if(!container)
+return;
+
+
+
+container.innerHTML =
+"<p>Loading products...</p>";
+
+
+
 try{
 
 
 const response =
-
 await fetch(
-
 `${API_URL}/products`
-
 );
+
+
+
+if(!response.ok){
+
+throw new Error(
+"API error"
+);
+
+}
 
 
 
@@ -145,30 +233,28 @@ await response.json();
 
 
 
-if(!data.success){
-
-throw new Error(
-"Unable to load products"
-);
-
-}
-
-
-
 renderProducts(
-data.products
+data.products || []
 );
 
 
 
 }
+
 
 catch(error){
 
 
 console.error(
+"Product loading error:",
 error
 );
+
+
+
+container.innerHTML =
+"<p>No products available</p>";
+
 
 
 showToast(
@@ -185,18 +271,21 @@ showToast(
 
 
 
+
+
+
 function renderProducts(products){
 
 
 const container =
-
 document.getElementById(
 "products"
 );
 
 
 
-if(!container) return;
+if(!container)
+return;
 
 
 
@@ -207,71 +296,96 @@ container.innerHTML="";
 products.forEach(product=>{
 
 
-container.innerHTML += `
+const card =
+
+document.createElement("div");
 
 
-<div class="product-card">
+card.className =
+"product-card";
 
+
+
+card.innerHTML = `
 
 <img
 
-src="${product.imageUrl || '/assets/default.png'}"
+src="${escapeHTML(
+product.imageUrl ||
+"/assets/default.png"
+)}"
 
-alt="${product.title}"
+alt="${escapeHTML(product.title)}"
 
->
+loading="lazy"
+
+/>
 
 
 <div class="product-content">
 
 
 <h3>
-${product.title}
+${escapeHTML(product.title)}
 </h3>
 
 
 <p>
-${product.description || ""}
+${escapeHTML(product.description)}
 </p>
 
 
 <strong>
-$${product.price}
+
+$${Number(product.price).toFixed(2)}
+
 </strong>
 
 
 
-<button
-
-onclick="addToCart(${JSON.stringify(product).replace(/"/g,'&quot;')})"
-
-class="btn">
+<button class="btn">
 
 Add Cart
 
 </button>
 
 
-
-<button
-
-onclick="viewProduct('${product.id}')"
-
-class="outline">
+<button class="outline">
 
 View
 
 </button>
 
 
-
 </div>
-
-
-</div>
-
 
 `;
+
+
+
+
+
+card.querySelector(".btn")
+
+.onclick = ()=>{
+
+addToCart(product);
+
+};
+
+
+
+card.querySelector(".outline")
+
+.onclick = ()=>{
+
+viewProduct(product.id);
+
+};
+
+
+
+container.appendChild(card);
 
 
 
@@ -287,26 +401,19 @@ View
 
 
 
-
 // =====================================
-// CART SYSTEM
+// CART
 // =====================================
 
 
 function getCart(){
 
-
-return JSON.parse(
-
-localStorage.getItem(
+return getJSON(
 "halo_cart"
-
-)
-
-) || [];
-
+);
 
 }
+
 
 
 
@@ -319,35 +426,38 @@ getCart();
 
 
 
-const exists =
+const existing =
 
 cart.find(
-
 item =>
 item.id === product.id
-
 );
 
 
 
-if(exists){
+if(existing){
+
+existing.quantity +=1;
 
 
-exists.quantity++;
+}
 
-
-}else{
+else{
 
 
 cart.push({
 
-id:product.id,
+id:
+product.id,
 
-title:product.title,
+title:
+product.title,
 
-price:product.price,
+price:
+Number(product.price),
 
-image:product.imageUrl,
+image:
+product.imageUrl,
 
 quantity:1
 
@@ -359,12 +469,9 @@ quantity:1
 
 
 
-localStorage.setItem(
-
+saveJSON(
 "halo_cart",
-
-JSON.stringify(cart)
-
+cart
 );
 
 
@@ -387,6 +494,7 @@ updateCartCount();
 
 
 
+
 function removeCartItem(id){
 
 
@@ -395,7 +503,8 @@ getCart();
 
 
 
-cart = cart.filter(
+cart =
+cart.filter(
 
 item =>
 item.id !== id
@@ -404,13 +513,15 @@ item.id !== id
 
 
 
-localStorage.setItem(
-
+saveJSON(
 "halo_cart",
-
-JSON.stringify(cart)
-
+cart
 );
+
+
+
+updateCartCount();
+
 
 
 showToast(
@@ -424,14 +535,22 @@ showToast(
 
 
 
-
 function cartCount(){
 
+return getCart()
 
-return getCart().length;
+.reduce(
 
+(total,item)=>
+
+total + item.quantity,
+
+0
+
+);
 
 }
+
 
 
 
@@ -449,16 +568,13 @@ document.getElementById(
 
 if(element){
 
-
 element.textContent =
 cartCount();
 
-
 }
 
 
 }
-
 
 
 
@@ -474,18 +590,13 @@ cartCount();
 
 function getWishlist(){
 
-
-return JSON.parse(
-
-localStorage.getItem(
+return getJSON(
 "halo_wishlist"
-
-)
-
-) || [];
-
+);
 
 }
+
+
 
 
 
@@ -500,7 +611,7 @@ getWishlist();
 
 const exists =
 
-wishlist.find(
+wishlist.some(
 
 item =>
 item.id === product.id
@@ -509,11 +620,12 @@ item.id === product.id
 
 
 
-
 if(exists){
 
 
-wishlist = wishlist.filter(
+wishlist =
+
+wishlist.filter(
 
 item =>
 item.id !== product.id
@@ -526,8 +638,9 @@ showToast(
 );
 
 
+}
 
-}else{
+else{
 
 
 wishlist.push(product);
@@ -542,15 +655,10 @@ showToast(
 
 
 
-
-localStorage.setItem(
-
+saveJSON(
 "halo_wishlist",
-
-JSON.stringify(wishlist)
-
+wishlist
 );
-
 
 
 }
@@ -570,19 +678,12 @@ JSON.stringify(wishlist)
 
 function getUser(){
 
-
-return JSON.parse(
-
-localStorage.getItem(
-"halo_user"
-
-)
-
-) || null;
-
+return getJSON(
+"halo_user",
+null
+);
 
 }
-
 
 
 
@@ -597,32 +698,22 @@ getUser();
 
 if(user){
 
-
 console.log(
-"Logged in:",
+"User:",
 user.email
-
 );
 
 
-return true;
-
+return user;
 
 }
 
 
 
-console.log(
-"Guest user"
-);
-
-
-
-return false;
+return null;
 
 
 }
-
 
 
 
@@ -632,7 +723,7 @@ return false;
 
 
 // =====================================
-// PRODUCT NAVIGATION
+// NAVIGATION
 // =====================================
 
 
@@ -641,11 +732,10 @@ function viewProduct(id){
 
 window.location.href =
 
-`/marketplace/product.html?id=${id}`;
+`/marketplace/product.html?id=${encodeURIComponent(id)}`;
 
 
 }
-
 
 
 
@@ -656,7 +746,7 @@ function openStore(id){
 
 window.location.href =
 
-`/marketplace/vendor.html?id=${id}`;
+`/marketplace/vendor.html?id=${encodeURIComponent(id)}`;
 
 
 }
@@ -681,20 +771,15 @@ getCart();
 
 
 
-if(cart.length===0){
-
+if(!cart.length){
 
 showToast(
 "Your cart is empty"
 );
 
-
 return;
 
-
 }
-
-
 
 
 
@@ -713,10 +798,8 @@ method:"POST",
 
 headers:{
 
-
 "Content-Type":
 "application/json"
-
 
 },
 
@@ -724,7 +807,6 @@ headers:{
 body:JSON.stringify({
 
 items:cart
-
 
 })
 
@@ -736,11 +818,8 @@ items:cart
 
 
 
-
 const data =
 await response.json();
-
-
 
 
 
@@ -752,14 +831,26 @@ window.location.href =
 `/checkout/checkout.html?order=${data.orderId}`;
 
 
+}
+
+else{
+
+
+throw new Error(
+"Checkout failed"
+);
+
 
 }
 
 
-
 }
+
 
 catch(error){
+
+
+console.error(error);
 
 
 showToast(
@@ -778,8 +869,6 @@ showToast(
 
 
 
-
-
 // =====================================
 // MOBILE MENU
 // =====================================
@@ -789,29 +878,22 @@ function toggleMenu(){
 
 
 const nav =
-
 document.querySelector(
 "nav"
-
 );
 
 
 
 if(nav){
 
-
 nav.classList.toggle(
 "open"
-
 );
 
-
 }
 
 
 }
-
-
 
 
 
@@ -820,7 +902,7 @@ nav.classList.toggle(
 
 
 // =====================================
-// INIT
+// START APP
 // =====================================
 
 
