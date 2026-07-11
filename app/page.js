@@ -1,54 +1,49 @@
 import Hero from "@/components/Hero";
 import FeaturedSection from "@/components/FeaturedSection";
 
+export default function Home() {
+  return (
+    <main>
 
-export default function Home(){
+      <Hero />
 
+      <FeaturedSection />
 
-return (
+      <section className="bg-gray-100 py-20">
+        <div className="max-w-7xl mx-auto px-6 text-center">
 
-<main>
+          <h2 className="text-5xl font-bold">
+            Sell Anything.
+            <br />
+            Reach Anyone.
+          </h2>
 
-<Hero />
+          <p className="mt-5 text-xl text-gray-600 max-w-3xl mx-auto">
+            Create your seller account and start reaching
+            customers across Canada.
+          </p>
 
-<FeaturedSection />
+          <div className="mt-8 flex justify-center gap-4">
 
+            <a
+              href="/signup"
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700"
+            >
+              Become a Seller
+            </a>
 
-<section className="bg-gray-100 py-20">
+            <a
+              href="/products"
+              className="border border-gray-300 px-8 py-4 rounded-lg font-semibold hover:bg-white"
+            >
+              Browse Products
+            </a>
 
-<div className="max-w-7xl mx-auto px-6 text-center">
+          </div>
 
+        </div>
+      </section>
 
-<h2 className="text-5xl font-bold">
-
-Sell Anything.
-Reach Anyone.
-
-</h2>
-
-
-<p className="mt-5 text-xl text-gray-600">
-
-Create your seller account and start reaching
-customers across Canada.
-
-</p>
-
-
-<button className="mt-8 bg-indigo-600 text-white px-10 py-4 rounded-xl">
-
-Become A Seller
-
-</button>
-
-
-</div>
-
-</section>
-
-
-</main>
-
-)
-
+    </main>
+  );
 }
