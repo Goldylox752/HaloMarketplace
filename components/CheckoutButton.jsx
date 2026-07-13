@@ -1,35 +1,75 @@
 "use client";
 
 
-export default function CheckoutButton({product}){
+import {useState} from "react";
+
+
+
+export default function CheckoutButton({
+
+productId
+
+}){
+
+
+const [loading,setLoading]=useState(false);
+
+
 
 
 async function checkout(){
 
 
-const response =
-await fetch(
+setLoading(true);
+
+
+
+const response = await fetch(
+
 "/api/checkout",
+
 {
+
 method:"POST",
+
 headers:{
+
 "Content-Type":"application/json"
+
 },
+
 body:JSON.stringify({
-product
+
+productId
+
 })
+
 }
+
 );
 
 
-const data =
-await response.json();
 
+const data = await response.json();
+
+
+
+if(data.url){
 
 window.location.href=data.url;
 
+}
+
+
+
+setLoading(false);
+
+
 
 }
+
+
+
 
 
 
@@ -39,21 +79,30 @@ return (
 
 onClick={checkout}
 
-className="
-w-full
-bg-black
-text-white
-py-4
-rounded-xl
-font-bold
-"
+disabled={loading}
+
+className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg"
 
 >
 
-Buy Now
+{
+
+loading
+
+?
+
+"Loading..."
+
+:
+
+"Buy Now"
+
+}
+
 
 </button>
 
 )
+
 
 }
