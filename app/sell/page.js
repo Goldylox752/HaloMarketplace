@@ -2,11 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 
+
 export default function SellPage(){
 
 
-async function createProduct(formData){
 
+async function createProduct(formData){
 
 "use server";
 
@@ -15,21 +16,12 @@ const supabase = await createClient();
 
 
 
-const title = formData.get("title");
-const description = formData.get("description");
-const price = formData.get("price");
-const location = formData.get("location");
-const condition = formData.get("condition");
-const image = formData.get("image");
-
-
-
 const {
 data:{
 user
 }
 
-} = await supabase.auth.getUser();
+}=await supabase.auth.getUser();
 
 
 
@@ -39,6 +31,84 @@ redirect("/login");
 
 }
 
+
+
+
+const title = formData.get("title");
+const description = formData.get("description");
+const price = formData.get("price");
+const location = formData.get("location");
+const condition = formData.get("condition");
+
+const files = formData.getAll("images");
+
+
+
+let uploadedImages = [];
+
+
+
+for(const file of files){
+
+
+if(file.size > 0){
+
+
+const fileName =
+`${user.id}-${Date.now()}-${file.name}`;
+
+
+
+const {
+data,
+error
+}=await supabase.storage
+.from("product-images")
+.upload(
+fileName,
+file,
+{
+contentType:file.type
+}
+);
+
+
+
+if(error){
+
+console.log(error);
+
+continue;
+
+}
+
+
+
+
+const {
+data:{
+publicUrl
+}
+
+}
+=
+supabase.storage
+.from("product-images")
+.getPublicUrl(
+data.path
+);
+
+
+
+uploadedImages.push(publicUrl);
+
+
+
+}
+
+
+
+}
 
 
 
@@ -59,7 +129,9 @@ location,
 
 condition,
 
-image,
+images:uploadedImages,
+
+image:uploadedImages[0] || null,
 
 created_at:new Date()
 
@@ -85,6 +157,7 @@ redirect("/products");
 
 
 
+
 return (
 
 <main className="min-h-screen bg-gray-50 py-16 px-6">
@@ -98,14 +171,14 @@ return (
 
 <h1 className="text-4xl font-bold">
 
-Sell on Halo Marketplace
+Create Listing
 
 </h1>
 
 
 <p className="text-gray-500 mt-3">
 
-Create your listing and reach buyers across Canada.
+Sell your products across Canada.
 
 </p>
 
@@ -115,6 +188,7 @@ Create your listing and reach buyers across Canada.
 <form
 action={createProduct}
 className="mt-8 space-y-5"
+encType="multipart/form-data"
 >
 
 
@@ -133,13 +207,14 @@ className="w-full border rounded-xl p-4"
 
 
 
+
 <input
 
 name="price"
 
-placeholder="Price CAD"
-
 type="number"
+
+placeholder="Price CAD"
 
 className="w-full border rounded-xl p-4"
 
@@ -149,11 +224,12 @@ className="w-full border rounded-xl p-4"
 
 
 
+
 <input
 
 name="location"
 
-placeholder="Location"
+placeholder="City / Province"
 
 className="w-full border rounded-xl p-4"
 
@@ -200,23 +276,6 @@ Refurbished
 
 
 
-
-<input
-
-name="image"
-
-placeholder="Image URL"
-
-className="w-full border rounded-xl p-4"
-
-/>
-
-
-
-
-
-
-
 <textarea
 
 name="description"
@@ -235,9 +294,37 @@ className="w-full border rounded-xl p-4"
 
 
 
+<label className="block font-semibold">
+
+Product Photos
+
+</label>
+
+
+
+<input
+
+name="images"
+
+type="file"
+
+multiple
+
+accept="image/*"
+
+className="w-full border rounded-xl p-4"
+
+/>
+
+
+
+
+
+
+
 <button
 
-className="w-full bg-indigo-600 text-white py-4 rounded-xl text-lg font-bold hover:bg-indigo-700"
+className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-indigo-700"
 
 >
 
@@ -251,6 +338,7 @@ Publish Listing
 </form>
 
 
+
 </div>
 
 
@@ -261,5 +349,6 @@ Publish Listing
 
 
 )
+
 
 }
