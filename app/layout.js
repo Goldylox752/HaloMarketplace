@@ -5,83 +5,183 @@ import Footer from "@/components/Footer";
 import AIChatWidget from "@/components/AIChatWidget";
 
 
+
 export const metadata = {
 
-  title: "Halo Marketplace | Canada's AI-Powered Marketplace",
 
-  description:
-    "Halo Marketplace is Canada's next-generation AI-powered marketplace. Buy, sell, discover products, connect with sellers, and shop securely.",
+title: {
 
-  keywords: [
-    "Halo Marketplace",
-    "Canada marketplace",
-    "buy and sell Canada",
-    "online marketplace",
-    "AI shopping assistant",
-    "ecommerce platform",
-    "seller marketplace",
-    "secure online shopping"
-  ],
+default:
+"Halo Marketplace | Canada's AI-Powered Marketplace",
 
-  authors: [
-    {
-      name: "Halo Marketplace"
-    }
-  ],
+template:
+"%s | Halo Marketplace"
 
-  creator: "Halo Marketplace",
+},
 
-  openGraph: {
 
-    title:
-      "Halo Marketplace | Buy & Sell Anything",
 
-    description:
-      "A smarter marketplace powered by AI, secure payments, and real-time connections.",
+description:
 
-    type:
-      "website",
+"Halo Marketplace is Canada's next-generation AI-powered marketplace. Buy, sell, discover products, connect with sellers, and shop securely.",
 
-  },
+
+
+keywords:[
+
+"Halo Marketplace",
+
+"Canada marketplace",
+
+"buy and sell Canada",
+
+"online marketplace",
+
+"AI shopping assistant",
+
+"ecommerce platform",
+
+"seller marketplace",
+
+"secure online shopping"
+
+],
+
+
+
+authors:[
+
+{
+
+name:"Halo Marketplace"
+
+}
+
+],
+
+
+
+creator:"Halo Marketplace",
+
+
+
+applicationName:"Halo Marketplace",
+
+
+
+openGraph:{
+
+
+title:
+"Halo Marketplace | Buy & Sell Anything",
+
+
+description:
+"A smarter marketplace powered by AI, secure payments, and real-time connections.",
+
+
+url:
+"https://halo-market.vercel.app",
+
+
+siteName:
+"Halo Marketplace",
+
+
+type:
+"website"
+
+
+
+},
+
+
+
+robots:{
+
+
+index:true,
+
+follow:true
+
+
+}
+
+
 
 };
 
 
-export default function RootLayout({ children }) {
-
-
-  return (
-
-    <html lang="en">
-
-
-      <body className="min-h-screen flex flex-col">
-
-
-        <Navbar />
-
-
-        <main className="flex-1">
-
-          {children}
-
-        </main>
 
 
 
-        <Footer />
+export const viewport = {
 
 
-        {/* AI Shopping Assistant */}
+width:"device-width",
 
-        <AIChatWidget />
+initialScale:1
+
+};
 
 
-      </body>
 
 
-    </html>
 
-  );
+
+
+export default function RootLayout({
+
+children
+
+}){
+
+
+return (
+
+
+<html lang="en">
+
+
+<body className="min-h-screen flex flex-col bg-gray-50">
+
+
+
+<Navbar />
+
+
+
+
+<main className="flex-1">
+
+
+{children}
+
+
+</main>
+
+
+
+
+
+<Footer />
+
+
+
+
+
+<AIChatWidget />
+
+
+
+
+</body>
+
+
+</html>
+
+
+);
+
 
 }
