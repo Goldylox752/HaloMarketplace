@@ -1,102 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 
+async function getProducts() {
 
-async function getDashboardData(){
-
-
-const supabase = await createClient();
+  const supabase = await createClient();
 
 
+  const { data: products } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", {
+      ascending:false
+    })
+    .limit(8);
 
-const {
-data:{
-user
-}
 
-}=await supabase.auth.getUser();
-
-
-
-if(!user){
-
-redirect("/login");
+  return products ?? [];
 
 }
 
 
 
-
-
-const {data:profile}=await supabase
-
-.from("profiles")
-
-.select("*")
-
-.eq("id",user.id)
-
-.single();
-
-
-
-
-
-
-const {data:products}=await supabase
-
-.from("products")
-
-.select("*")
-
-.eq("seller_id",user.id)
-
-.order(
-"created_at",
-{
-ascending:false
-}
-);
-
-
-
-
-
-
-const {data:favorites}=await supabase
-
-.from("favorites")
-
-.select("*")
-
-.eq("user_id",user.id);
-
-
-
-
-
-return {
-
-user,
-
-profile,
-
-products:products || [],
-
-favorites:favorites || []
-
-};
-
-
-}
-
-
-
-
-function formatPrice(price){
+function formatPrice(price:number){
 
 return new Intl.NumberFormat(
 "en-CA",
@@ -110,246 +37,149 @@ currency:"CAD"
 
 
 
+export default async function HomePage(){
 
 
-export default async function DashboardPage(){
-
-
-const {
-
-user,
-
-profile,
-
-products,
-
-favorites
-
-}=await getDashboardData();
-
-
+const products = await getProducts();
 
 
 
 return (
 
-<main className="min-h-screen bg-gray-50 py-12 px-6">
+<main className="min-h-screen bg-gray-50">
 
 
-<div className="max-w-7xl mx-auto">
+{/* HERO */}
+
+<section className="bg-white py-20 px-6">
 
 
+<div className="max-w-7xl mx-auto text-center">
 
 
+<h1 className="text-5xl md:text-6xl font-bold">
 
-{/* HEADER */}
-
-
-<section className="bg-white rounded-3xl shadow p-8">
-
-
-<div className="flex flex-col md:flex-row items-center gap-6">
-
-
-
-<Image
-
-src={
-profile?.avatar ||
-"/avatar.png"
-}
-
-alt="profile"
-
-width={100}
-
-height={100}
-
-className="rounded-full"
-
-/>
-
-
-
-
-<div>
-
-
-<h1 className="text-4xl font-bold">
-
-Welcome back,
-
-{" "}
-
-{profile?.username || "Seller"}
+Buy & Sell Across Canada
 
 </h1>
 
 
+<p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">
 
-<p className="text-gray-500 mt-2">
-
-{user.email}
-
-</p>
-
-
-
-
-<p className="mt-3">
-
-📍 {profile?.location || "Canada"}
+Halo Marketplace connects buyers and sellers with a simple, secure shopping experience.
 
 </p>
 
 
-</div>
 
+<div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
 
 
-</div>
+<Link
 
+href="/products"
 
+className="bg-black text-white px-8 py-4 rounded-xl font-bold"
 
-</section>
+>
 
+Browse Products
 
+</Link>
 
-
-
-
-
-{/* STATS */}
-
-
-<section className="grid md:grid-cols-3 gap-6 mt-8">
-
-
-<div className="bg-white rounded-3xl shadow p-6">
-
-
-<h3 className="text-gray-500">
-
-Listings
-
-</h3>
-
-
-<p className="text-4xl font-bold mt-2">
-
-{products.length}
-
-</p>
-
-
-</div>
-
-
-
-
-
-<div className="bg-white rounded-3xl shadow p-6">
-
-
-<h3 className="text-gray-500">
-
-Favorites
-
-</h3>
-
-
-<p className="text-4xl font-bold mt-2">
-
-{favorites.length}
-
-</p>
-
-
-</div>
-
-
-
-
-
-<div className="bg-white rounded-3xl shadow p-6">
-
-
-<h3 className="text-gray-500">
-
-Seller Rating
-
-</h3>
-
-
-<p className="text-4xl font-bold mt-2">
-
-⭐ {profile?.rating || "5.0"}
-
-</p>
-
-
-</div>
-
-
-
-</section>
-
-
-
-
-
-
-
-
-{/* ACTIONS */}
-
-
-<section className="grid md:grid-cols-3 gap-6 mt-8">
 
 
 <Link
 
 href="/sell"
 
-className="bg-indigo-600 text-white rounded-2xl p-6 font-bold text-xl"
+className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold"
 
 >
 
-+ Create Listing
+Start Selling
 
 </Link>
 
 
+</div>
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+{/* CATEGORIES */}
+
+<section className="py-12 px-6">
+
+
+<div className="max-w-7xl mx-auto">
+
+
+<h2 className="text-3xl font-bold mb-8">
+
+Shop Categories
+
+</h2>
+
+
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+
+{[
+["🚗","Vehicles"],
+["📱","Electronics"],
+["🏠","Home"],
+["👕","Fashion"],
+["🎮","Gaming"],
+["🛠","Tools"],
+["⚽","Sports"],
+["💼","Services"]
+].map(([icon,name])=>(
 
 
 <Link
 
-href="/messages"
+key={name}
 
-className="bg-black text-white rounded-2xl p-6 font-bold text-xl"
+href={`/products?category=${name}`}
+
+className="bg-white rounded-3xl shadow p-8 text-center hover:shadow-xl"
 
 >
 
-💬 Messages
+
+<div className="text-4xl">
+
+{icon}
+
+</div>
+
+
+<p className="mt-3 font-bold">
+
+{name}
+
+</p>
+
 
 </Link>
 
 
+))}
 
 
+</div>
 
-<Link
 
-href="/favorites"
-
-className="bg-white shadow rounded-2xl p-6 font-bold text-xl"
-
->
-
-❤️ Favorites
-
-</Link>
-
+</div>
 
 
 </section>
@@ -359,45 +189,77 @@ className="bg-white shadow rounded-2xl p-6 font-bold text-xl"
 
 
 
+{/* FEATURED PRODUCTS */}
+
+<section className="px-6 py-12">
 
 
-{/* MY PRODUCTS */}
+<div className="max-w-7xl mx-auto">
 
 
+<div className="flex justify-between items-center mb-8">
 
-<section className="mt-12">
 
+<h2 className="text-3xl font-bold">
 
-<h2 className="text-3xl font-bold mb-6">
-
-My Listings
+Featured Listings
 
 </h2>
 
 
 
+<Link
 
+href="/products"
 
-{products.length === 0 ? (
+className="text-indigo-600 font-bold"
 
+>
 
-<div className="bg-white rounded-3xl p-8">
+View All →
 
-You have no listings yet.
+</Link>
+
 
 </div>
 
 
 
-):(
 
+
+{
+products.length === 0 ?
+
+
+<div className="bg-white rounded-3xl p-10">
+
+No products listed yet.
+
+<Link
+
+href="/sell"
+
+className="block mt-4 text-indigo-600 font-bold"
+
+>
+
+Become the first seller
+
+</Link>
+
+
+</div>
+
+
+
+:
 
 
 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
 
-
-{products.map((product)=>(
+{
+products.map((product)=>(
 
 
 <Link
@@ -411,13 +273,11 @@ className="bg-white rounded-3xl shadow overflow-hidden hover:shadow-xl"
 >
 
 
-
-<div className="h-48 bg-gray-100">
+<div className="h-52 bg-gray-100">
 
 
 {
-
-product.image ? (
+product.image ?
 
 
 <Image
@@ -435,26 +295,21 @@ className="w-full h-full object-cover"
 />
 
 
-):(
+
+:
 
 
-<div className="flex h-full items-center justify-center text-6xl">
+<div className="h-full flex items-center justify-center text-6xl">
 
 📦
 
 </div>
 
 
-)
-
 }
 
 
-
 </div>
-
-
-
 
 
 
@@ -470,7 +325,6 @@ className="w-full h-full object-cover"
 
 
 
-
 <p className="text-indigo-600 font-bold mt-2">
 
 {formatPrice(product.price)}
@@ -479,24 +333,32 @@ className="w-full h-full object-cover"
 
 
 
-</div>
+<p className="text-gray-500 text-sm mt-2">
 
+📍 {product.location}
+
+</p>
+
+
+</div>
 
 
 </Link>
 
 
+))
 
-))}
-
+}
 
 
 </div>
 
 
+}
 
-)}
 
+
+</div>
 
 
 </section>
@@ -504,12 +366,53 @@ className="w-full h-full object-cover"
 
 
 
+
+
+
+{/* SELLER CTA */}
+
+<section className="py-16 px-6">
+
+
+<div className="max-w-5xl mx-auto bg-black text-white rounded-3xl p-10 text-center">
+
+
+<h2 className="text-4xl font-bold">
+
+Open Your Halo Store
+
+</h2>
+
+
+<p className="mt-4 text-gray-300">
+
+Start selling products and reach buyers across Canada.
+
+</p>
+
+
+
+<Link
+
+href="/sell"
+
+className="inline-block mt-8 bg-indigo-600 px-8 py-4 rounded-xl font-bold"
+
+>
+
+Start Selling
+
+</Link>
+
+
 </div>
 
+
+</section>
 
 
 </main>
 
-)
+);
 
 }
