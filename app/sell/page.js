@@ -2,9 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 
-
 export default function SellPage(){
-
 
 
 async function createProduct(formData){
@@ -38,6 +36,7 @@ const title = formData.get("title");
 const description = formData.get("description");
 const price = formData.get("price");
 const location = formData.get("location");
+const category = formData.get("category");
 const condition = formData.get("condition");
 
 const files = formData.getAll("images");
@@ -55,13 +54,14 @@ if(file.size > 0){
 
 
 const fileName =
-`${user.id}-${Date.now()}-${file.name}`;
+`${user.id}/${Date.now()}-${file.name}`;
 
 
 
 const {
 data,
 error
+
 }=await supabase.storage
 .from("product-images")
 .upload(
@@ -84,15 +84,13 @@ continue;
 
 
 
-
 const {
 data:{
 publicUrl
-}
 
 }
-=
-supabase.storage
+
+}=supabase.storage
 .from("product-images")
 .getPublicUrl(
 data.path
@@ -103,12 +101,11 @@ data.path
 uploadedImages.push(publicUrl);
 
 
-
 }
 
 
-
 }
+
 
 
 
@@ -127,15 +124,18 @@ price:Number(price),
 
 location,
 
+category,
+
 condition,
 
-images:uploadedImages,
-
 image:uploadedImages[0] || null,
+
+images:uploadedImages,
 
 created_at:new Date()
 
 });
+
 
 
 
@@ -171,14 +171,14 @@ return (
 
 <h1 className="text-4xl font-bold">
 
-Create Listing
+Sell on Halo Marketplace
 
 </h1>
 
 
 <p className="text-gray-500 mt-3">
 
-Sell your products across Canada.
+Create your listing and reach buyers across Canada.
 
 </p>
 
@@ -186,9 +186,13 @@ Sell your products across Canada.
 
 
 <form
+
 action={createProduct}
-className="mt-8 space-y-5"
+
 encType="multipart/form-data"
+
+className="mt-8 space-y-5"
+
 >
 
 
@@ -197,6 +201,8 @@ encType="multipart/form-data"
 <input
 
 name="title"
+
+required
 
 placeholder="Product title"
 
@@ -211,6 +217,8 @@ className="w-full border rounded-xl p-4"
 <input
 
 name="price"
+
+required
 
 type="number"
 
@@ -229,6 +237,8 @@ className="w-full border rounded-xl p-4"
 
 name="location"
 
+required
+
 placeholder="City / Province"
 
 className="w-full border rounded-xl p-4"
@@ -240,32 +250,78 @@ className="w-full border rounded-xl p-4"
 
 
 
+
 <select
 
-name="condition"
+name="category"
+
+required
 
 className="w-full border rounded-xl p-4"
 
 >
 
 
-<option>
-New
+<option value="">
+
+Choose Category
+
 </option>
 
 
-<option>
-Like New
+<option value="Vehicles">
+
+🚗 Vehicles
+
 </option>
 
 
-<option>
-Used
+<option value="Electronics">
+
+📱 Electronics
+
 </option>
 
 
-<option>
-Refurbished
+<option value="Home">
+
+🏠 Home
+
+</option>
+
+
+<option value="Fashion">
+
+👕 Fashion
+
+</option>
+
+
+<option value="Gaming">
+
+🎮 Gaming
+
+</option>
+
+
+<option value="Tools">
+
+🛠 Tools
+
+</option>
+
+
+<option value="Sports">
+
+⚽ Sports
+
+</option>
+
+
+<option value="Services">
+
+💼 Services
+
 </option>
 
 
@@ -276,13 +332,70 @@ Refurbished
 
 
 
+
+<select
+
+name="condition"
+
+required
+
+className="w-full border rounded-xl p-4"
+
+>
+
+
+<option value="">
+
+Condition
+
+</option>
+
+
+<option>
+
+New
+
+</option>
+
+
+<option>
+
+Like New
+
+</option>
+
+
+<option>
+
+Used
+
+</option>
+
+
+<option>
+
+Refurbished
+
+</option>
+
+
+</select>
+
+
+
+
+
+
+
 <textarea
 
 name="description"
 
-placeholder="Describe your product"
+required
 
 rows="6"
+
+placeholder="Describe your item..."
 
 className="w-full border rounded-xl p-4"
 
@@ -294,11 +407,12 @@ className="w-full border rounded-xl p-4"
 
 
 
-<label className="block font-semibold">
+<label className="font-semibold">
 
-Product Photos
+Upload Photos
 
 </label>
+
 
 
 
@@ -312,6 +426,8 @@ multiple
 
 accept="image/*"
 
+required
+
 className="w-full border rounded-xl p-4"
 
 />
@@ -324,7 +440,7 @@ className="w-full border rounded-xl p-4"
 
 <button
 
-className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-indigo-700"
+className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl text-lg font-bold"
 
 >
 
@@ -349,6 +465,5 @@ Publish Listing
 
 
 )
-
 
 }
