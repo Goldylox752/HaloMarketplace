@@ -19,12 +19,12 @@ user
 
 
 
+
 if(!user){
 
 redirect("/login");
 
 }
-
 
 
 
@@ -51,16 +51,6 @@ id,
 title,
 
 image
-
-),
-
-profiles:seller_id(
-
-username,
-
-avatar,
-
-rating
 
 )
 
@@ -114,12 +104,13 @@ return reviews || [];
 
 
 
-
 function formatDate(date){
 
 
 return new Date(date).toLocaleDateString(
+
 "en-CA"
+
 );
 
 
@@ -158,6 +149,7 @@ return (
 My Reviews
 
 </h1>
+
 
 
 
@@ -229,14 +221,6 @@ className="bg-white rounded-3xl shadow p-8"
 
 
 
-<div className="flex justify-between items-start">
-
-
-
-<div>
-
-
-
 <h2 className="text-xl font-bold">
 
 {review.products?.title || "Product"}
@@ -246,43 +230,13 @@ className="bg-white rounded-3xl shadow p-8"
 
 
 
-<p className="text-gray-500 mt-1">
-
-Seller: {review.profiles?.username || "Seller"}
-
-</p>
 
 
-
-</div>
-
-
-
-
-
-<p className="text-sm text-gray-400">
-
-{formatDate(review.created_at)}
-
-</p>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-<div className="mt-5 text-yellow-500 text-2xl">
+<div className="mt-4 text-yellow-500 text-2xl">
 
 {"⭐".repeat(review.rating || 0)}
 
 </div>
-
 
 
 
@@ -300,6 +254,18 @@ Seller: {review.profiles?.username || "Seller"}
 
 
 
+
+<p className="mt-5 text-sm text-gray-400">
+
+Posted {formatDate(review.created_at)}
+
+</p>
+
+
+
+
+
+
 </div>
 
 
@@ -312,7 +278,6 @@ Seller: {review.profiles?.username || "Seller"}
 
 
 }
-
 
 
 
