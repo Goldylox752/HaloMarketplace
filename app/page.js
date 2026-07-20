@@ -8,13 +8,30 @@ async function getProducts() {
   const supabase = await createClient();
 
 
-  const { data: products } = await supabase
+  const { data: products, error } = await supabase
     .from("products")
-    .select("*")
+    .select(`
+      id,
+      title,
+      price,
+      image,
+      location,
+      slug,
+      created_at
+    `)
     .order("created_at", {
-      ascending:false
+      ascending: false
     })
     .limit(8);
+
+
+  if(error){
+
+    console.error(error);
+
+    return [];
+
+  }
 
 
   return products ?? [];
@@ -23,17 +40,21 @@ async function getProducts() {
 
 
 
-function formatPrice(price:number){
 
-return new Intl.NumberFormat(
-"en-CA",
-{
-style:"currency",
-currency:"CAD"
-}
-).format(price || 0);
+
+function formatPrice(price){
+
+  return new Intl.NumberFormat(
+    "en-CA",
+    {
+      style:"currency",
+      currency:"CAD"
+    }
+  ).format(price || 0);
 
 }
+
+
 
 
 
@@ -44,42 +65,67 @@ const products = await getProducts();
 
 
 
+
+const categories = [
+
+["🚗","Vehicles"],
+["📱","Electronics"],
+["🏠","Home"],
+["👕","Fashion"],
+["🎮","Gaming"],
+["🛠","Tools"],
+["⚽","Sports"],
+["💼","Services"]
+
+];
+
+
+
+
 return (
 
 <main className="min-h-screen bg-gray-50">
 
 
+
+
+
 {/* HERO */}
 
-<section className="bg-white py-20 px-6">
+
+<section className="bg-white px-6 py-24">
 
 
-<div className="max-w-7xl mx-auto text-center">
+<div className="mx-auto max-w-7xl text-center">
 
 
-<h1 className="text-5xl md:text-6xl font-bold">
+<h1 className="text-5xl font-black tracking-tight md:text-6xl">
 
 Buy & Sell Across Canada
 
 </h1>
 
 
-<p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">
 
-Halo Marketplace connects buyers and sellers with a simple, secure shopping experience.
+<p className="mx-auto mt-6 max-w-3xl text-xl text-gray-600">
+
+Halo Marketplace connects buyers and sellers
+with a simple, secure, and modern shopping
+experience.
 
 </p>
 
 
 
-<div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+
+<div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
 
 
 <Link
 
 href="/products"
 
-className="bg-black text-white px-8 py-4 rounded-xl font-bold"
+className="rounded-xl bg-black px-8 py-4 font-bold text-white transition hover:bg-gray-800"
 
 >
 
@@ -89,11 +135,12 @@ Browse Products
 
 
 
+
 <Link
 
 href="/sell"
 
-className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold"
+className="rounded-xl bg-indigo-600 px-8 py-4 font-bold text-white transition hover:bg-indigo-700"
 
 >
 
@@ -114,15 +161,18 @@ Start Selling
 
 
 
+
+
 {/* CATEGORIES */}
 
-<section className="py-12 px-6">
+
+<section className="px-6 py-16">
 
 
-<div className="max-w-7xl mx-auto">
+<div className="mx-auto max-w-7xl">
 
 
-<h2 className="text-3xl font-bold mb-8">
+<h2 className="mb-8 text-3xl font-black">
 
 Shop Categories
 
@@ -130,19 +180,12 @@ Shop Categories
 
 
 
-<div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+<div className="grid grid-cols-2 gap-6 md:grid-cols-4">
 
 
-{[
-["🚗","Vehicles"],
-["📱","Electronics"],
-["🏠","Home"],
-["👕","Fashion"],
-["🎮","Gaming"],
-["🛠","Tools"],
-["⚽","Sports"],
-["💼","Services"]
-].map(([icon,name])=>(
+{
+categories.map(([icon,name])=>(
 
 
 <Link
@@ -151,29 +194,31 @@ key={name}
 
 href={`/products?category=${name}`}
 
-className="bg-white rounded-3xl shadow p-8 text-center hover:shadow-xl"
+className="rounded-3xl bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
 
 >
 
 
-<div className="text-4xl">
+<div className="text-5xl">
 
 {icon}
 
 </div>
 
 
-<p className="mt-3 font-bold">
+
+<h3 className="mt-4 font-bold">
 
 {name}
 
-</p>
+</h3>
 
 
 </Link>
 
 
-))}
+))
+}
 
 
 </div>
@@ -189,18 +234,23 @@ className="bg-white rounded-3xl shadow p-8 text-center hover:shadow-xl"
 
 
 
+
+
 {/* FEATURED PRODUCTS */}
 
-<section className="px-6 py-12">
 
 
-<div className="max-w-7xl mx-auto">
+<section className="px-6 py-16">
 
 
-<div className="flex justify-between items-center mb-8">
+<div className="mx-auto max-w-7xl">
 
 
-<h2 className="text-3xl font-bold">
+
+<div className="mb-10 flex items-center justify-between">
+
+
+<h2 className="text-3xl font-black">
 
 Featured Listings
 
@@ -208,11 +258,12 @@ Featured Listings
 
 
 
+
 <Link
 
 href="/products"
 
-className="text-indigo-600 font-bold"
+className="font-bold text-indigo-600"
 
 >
 
@@ -227,23 +278,33 @@ View All →
 
 
 
+
+
 {
+
 products.length === 0 ?
 
 
-<div className="bg-white rounded-3xl p-10">
+<div className="rounded-3xl bg-white p-10 text-center">
 
-No products listed yet.
+
+<h3 className="text-xl font-bold">
+
+No products yet
+
+</h3>
+
+
 
 <Link
 
 href="/sell"
 
-className="block mt-4 text-indigo-600 font-bold"
+className="mt-5 inline-block font-bold text-indigo-600"
 
 >
 
-Become the first seller
+Create the first listing →
 
 </Link>
 
@@ -255,28 +316,36 @@ Become the first seller
 :
 
 
-<div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 
 
 {
+
 products.map((product)=>(
 
 
 <Link
 
+
 key={product.id}
 
-href={`/products/${product.id}`}
 
-className="bg-white rounded-3xl shadow overflow-hidden hover:shadow-xl"
+href={`/product/${product.slug ?? product.id}`}
+
+
+className="overflow-hidden rounded-3xl bg-white shadow-sm transition hover:-translate-y-2 hover:shadow-xl"
+
+
 
 >
 
 
-<div className="h-52 bg-gray-100">
+
+<div className="relative h-56 bg-gray-100">
 
 
 {
+
 product.image ?
 
 
@@ -286,20 +355,19 @@ src={product.image}
 
 alt={product.title}
 
-width={400}
+fill
 
-height={300}
+sizes="(max-width:768px) 100vw, 300px"
 
-className="w-full h-full object-cover"
+className="object-cover"
 
 />
-
 
 
 :
 
 
-<div className="h-full flex items-center justify-center text-6xl">
+<div className="flex h-full items-center justify-center text-6xl">
 
 📦
 
@@ -314,10 +382,12 @@ className="w-full h-full object-cover"
 
 
 
-<div className="p-5">
 
 
-<h3 className="font-bold">
+<div className="p-6">
+
+
+<h3 className="font-bold text-lg">
 
 {product.title}
 
@@ -325,7 +395,8 @@ className="w-full h-full object-cover"
 
 
 
-<p className="text-indigo-600 font-bold mt-2">
+
+<p className="mt-3 text-xl font-black text-indigo-600">
 
 {formatPrice(product.price)}
 
@@ -333,14 +404,16 @@ className="w-full h-full object-cover"
 
 
 
-<p className="text-gray-500 text-sm mt-2">
 
-📍 {product.location}
+<p className="mt-2 text-sm text-gray-500">
+
+📍 {product.location || "Canada"}
 
 </p>
 
 
 </div>
+
 
 
 </Link>
@@ -369,26 +442,33 @@ className="w-full h-full object-cover"
 
 
 
+
 {/* SELLER CTA */}
 
-<section className="py-16 px-6">
 
 
-<div className="max-w-5xl mx-auto bg-black text-white rounded-3xl p-10 text-center">
+<section className="px-6 py-20">
 
 
-<h2 className="text-4xl font-bold">
+<div className="mx-auto max-w-5xl rounded-3xl bg-black p-12 text-center text-white">
+
+
+<h2 className="text-4xl font-black">
 
 Open Your Halo Store
 
 </h2>
 
 
-<p className="mt-4 text-gray-300">
 
-Start selling products and reach buyers across Canada.
+
+<p className="mt-5 text-lg text-gray-300">
+
+Create listings, manage products,
+and reach buyers across Canada.
 
 </p>
+
 
 
 
@@ -396,7 +476,7 @@ Start selling products and reach buyers across Canada.
 
 href="/sell"
 
-className="inline-block mt-8 bg-indigo-600 px-8 py-4 rounded-xl font-bold"
+className="mt-8 inline-block rounded-xl bg-indigo-600 px-8 py-4 font-bold transition hover:bg-indigo-700"
 
 >
 
@@ -411,8 +491,13 @@ Start Selling
 </section>
 
 
+
+
+
+
 </main>
 
 );
+
 
 }
