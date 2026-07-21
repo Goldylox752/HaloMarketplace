@@ -4,257 +4,1477 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-// ─── Server Actions ──────────────────────────────────────────────
 
-// Logout
-async function logout() {
-  "use server";
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/");
+
+async function logout(){
+
+"use server";
+
+const supabase = await createClient();
+
+await supabase.auth.signOut();
+
+redirect("/");
+
 }
 
-// Delete product (soft delete – set status to 'inactive')
-async function deleteProduct(formData: FormData) {
-  "use server";
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
 
-  const productId = formData.get("productId")?.toString();
-  if (!productId) return;
 
-  // Soft delete: update status to 'inactive'
-  const { error } = await supabase
-    .from("products")
-    .update({ status: "inactive" })
-    .eq("id", productId)
-    .eq("user_id", user.id);
 
-  if (error) {
-    console.error("Delete error:", error);
-    // Optionally redirect with error
-  }
+async function deleteProduct(formData){
 
-  // Refresh the dashboard
-  revalidatePath("/dashboard");
-  redirect("/dashboard");
+"use server";
+
+
+const supabase = await createClient();
+
+
+const {
+data:{
+user
 }
 
-// ─── Data Fetching ──────────────────────────────────────────────
+}=await supabase.auth.getUser();
 
-async function getDashboardData() {
-  const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
 
-  // Profile (fallback if missing)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+if(!user){
 
-  // User's products
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+redirect("/login");
 
-  // Favorites (if table exists)
-  const { data: favorites } = await supabase
-    .from("favorites")
-    .select("*")
-    .eq("user_id", user.id);
-
-  return {
-    user,
-    profile: profile || { username: "Seller", avatar: null, location: "Canada" },
-    products: products ?? [],
-    favorites: favorites ?? [],
-  };
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-CA", {
-    style: "currency",
-    currency: "CAD",
-  }).format(price || 0);
+
+const productId =
+formData.get("productId");
+
+
+
+if(!productId) return;
+
+
+
+
+await supabase
+
+.from("products")
+
+.update({
+
+status:"inactive"
+
+})
+
+.eq(
+"id",
+productId
+)
+
+.eq(
+"user_id",
+user.id
+);
+
+
+
+revalidatePath("/dashboard");
+
+
+
 }
 
-// ─── Page Component ─────────────────────────────────────────────
 
-export default async function DashboardPage() {
-  const { user, profile, products, favorites } = await getDashboardData();
 
-  return (
-    <main className="min-h-screen bg-gray-50 px-6 py-12">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with logout */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold"
-            >
-              Logout
-            </button>
-          </form>
-        </div>
 
-        {/* Seller Header */}
-        <section className="bg-white rounded-3xl shadow p-8">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <Image
-              src={profile?.avatar || "/avatar.png"}
-              alt="Seller profile"
-              width={100}
-              height={100}
-              className="rounded-full"
-            />
-            <div>
-              <h1 className="text-4xl font-bold">
-                Welcome back {profile?.username || "Seller"}
-              </h1>
-              <p className="text-gray-500 mt-2">{user.email}</p>
-              <p className="mt-2">📍 {profile?.location || "Canada"}</p>
-              <span className="inline-block mt-3 bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full text-sm font-bold">
-                ✓ Halo Seller
-              </span>
-            </div>
-          </div>
-        </section>
 
-        {/* Stats */}
-        <section className="grid md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white rounded-3xl shadow p-6">
-            <p className="text-gray-500">Listings</p>
-            <h2 className="text-4xl font-bold">{products.length}</h2>
-          </div>
-          <div className="bg-white rounded-3xl shadow p-6">
-            <p className="text-gray-500">Favorites</p>
-            <h2 className="text-4xl font-bold">{favorites.length}</h2>
-          </div>
-          <div className="bg-white rounded-3xl shadow p-6">
-            <p className="text-gray-500">Rating</p>
-            <h2 className="text-4xl font-bold">⭐ {profile?.rating || "5.0"}</h2>
-          </div>
-        </section>
 
-        {/* Actions */}
-        <section className="grid md:grid-cols-3 gap-6 mt-8">
-          <Link
-            href="/sell"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl p-6 text-xl font-bold text-center"
-          >
-            ＋ Create Listing
-          </Link>
-          <Link
-            href="/messages"
-            className="bg-black text-white rounded-2xl p-6 text-xl font-bold text-center"
-          >
-            💬 Messages
-          </Link>
-          <Link
-            href="/store/settings"
-            className="bg-white shadow rounded-2xl p-6 text-xl font-bold text-center"
-          >
-            ⚙ Store Settings
-          </Link>
-        </section>
 
-        {/* Products */}
-        <section className="mt-12">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold">My Listings</h2>
-            <Link href="/sell" className="text-indigo-600 font-bold">
-              Add Product →
-            </Link>
-          </div>
 
-          {products.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center text-gray-500">
-              You have no listings yet.{" "}
-              <Link href="/sell" className="text-indigo-600 font-bold">
-                Create your first listing
-              </Link>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-3xl shadow overflow-hidden flex flex-col"
-                >
-                  <Link href={`/product/${product.slug || product.id}`}>
-                    <div className="h-48 bg-gray-100 relative">
-                      {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt={product.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-5xl">
-                          📦
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-5">
-                      <h3 className="font-bold truncate">{product.title}</h3>
-                      <p className="text-indigo-600 font-bold mt-2">
-                        {formatPrice(product.price)}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {product.status || "Active"}
-                      </p>
-                    </div>
-                  </Link>
+async function getDashboardData(){
 
-                  {/* Edit & Delete buttons */}
-                  <div className="px-5 pb-5 flex gap-2 mt-auto">
-                    <Link
-                      href={`/product/edit/${product.slug}`}
-                      className="flex-1 text-center bg-gray-200 hover:bg-gray-300 rounded-xl py-2 text-sm font-bold transition"
-                    >
-                      Edit
-                    </Link>
-                    <form action={deleteProduct} className="flex-1">
-                      <input type="hidden" name="productId" value={product.id} />
-                      <button
-                        type="submit"
-                        className="w-full bg-red-100 hover:bg-red-200 text-red-700 rounded-xl py-2 text-sm font-bold transition"
-                        onClick={(e) => {
-                          if (
-                            !confirm(
-                              "Are you sure you want to delete this listing?"
-                            )
-                          ) {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
-  );
+
+const supabase = await createClient();
+
+
+
+const {
+data:{
+user
+}
+
+}=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+redirect("/login");
+
+}
+
+
+
+
+
+
+
+const {
+
+data:profile
+
+}=await supabase
+
+.from("profiles")
+
+.select(`
+
+username,
+avatar,
+location,
+verified,
+seller_rating,
+sales_count,
+store_name,
+store_description
+
+`)
+
+.eq(
+"id",
+user.id
+)
+
+.single();
+
+
+
+
+
+
+
+const {
+
+data:products
+
+}=await supabase
+
+.from("products")
+
+.select(`
+
+id,
+title,
+price,
+image,
+slug,
+category,
+location,
+status,
+created_at
+
+`)
+
+.eq(
+"user_id",
+user.id
+)
+
+.order(
+"created_at",
+{
+ascending:false
+}
+
+);
+
+
+
+
+
+
+
+const {
+
+count:listingViews
+
+}=await supabase
+
+.from("product_views")
+
+.select(
+"id",
+{
+count:"exact",
+head:true
+}
+
+)
+
+.in(
+
+"product_id",
+
+products?.map(
+p=>p.id
+) || []
+
+);
+
+
+
+
+
+
+const {
+
+data:favorites
+
+}=await supabase
+
+.from("favorites")
+
+.select("id")
+
+.eq(
+"user_id",
+user.id
+);
+
+
+
+
+
+
+
+return {
+
+user,
+
+profile:profile || {},
+
+products:products || [],
+
+views:listingViews || 0,
+
+favorites:favorites?.length || 0
+
+};
+
+
+}
+
+
+
+
+
+
+
+function formatPrice(price){
+
+return new Intl.NumberFormat(
+"en-CA",
+{
+style:"currency",
+currency:"CAD"
+}
+
+).format(price || 0);
+
+}
+export default async function DashboardPage(){
+
+
+const {
+
+user,
+
+profile,
+
+products,
+
+views,
+
+favorites
+
+}=await getDashboardData();
+
+
+
+
+
+return (
+
+<main className="
+min-h-screen
+bg-gray-50
+px-6
+py-12
+">
+
+
+<div className="
+mx-auto
+max-w-7xl
+">
+
+
+
+
+
+{/* HEADER */}
+
+
+<div className="
+mb-8
+flex
+items-center
+justify-between
+">
+
+
+<div>
+
+
+<h1 className="
+text-4xl
+font-black
+">
+
+Seller Dashboard
+
+</h1>
+
+
+<p className="
+mt-2
+text-gray-500
+">
+
+Manage your Halo Marketplace business.
+
+</p>
+
+
+</div>
+
+
+
+
+
+<form action={logout}>
+
+
+<button
+
+className="
+rounded-xl
+bg-red-500
+px-5
+py-3
+font-bold
+text-white
+"
+
+>
+
+Logout
+
+</button>
+
+
+</form>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+{/* SELLER PROFILE */}
+
+
+
+<section className="
+rounded-3xl
+bg-black
+p-8
+text-white
+">
+
+
+
+<div className="
+flex
+flex-col
+gap-6
+md:flex-row
+md:items-center
+">
+
+
+
+
+
+<div className="
+relative
+h-24
+w-24
+overflow-hidden
+rounded-full
+bg-gray-800
+">
+
+
+<Image
+
+src={
+profile.avatar ||
+"/avatar.png"
+}
+
+alt="Seller"
+
+fill
+
+className="
+object-cover
+"
+
+/>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div>
+
+
+<div className="
+flex
+items-center
+gap-3
+">
+
+
+<h2 className="
+text-3xl
+font-black
+">
+
+{
+profile.store_name ||
+profile.username ||
+"Your Store"
+}
+
+</h2>
+
+
+
+
+{
+
+profile.verified && (
+
+<span className="
+rounded-full
+bg-green-500
+px-3
+py-1
+text-xs
+font-bold
+">
+
+✓ Verified
+
+</span>
+
+
+)
+
+}
+
+
+
+</div>
+
+
+
+
+
+<p className="
+mt-2
+text-gray-300
+">
+
+📍 {profile.location || "Canada"}
+
+</p>
+
+
+
+
+<p className="
+mt-3
+max-w-xl
+text-gray-300
+">
+
+{
+profile.store_description ||
+"Create your seller profile and start growing your marketplace business."
+}
+
+</p>
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+
+
+{/* ANALYTICS */}
+
+
+
+<section className="
+mt-8
+grid
+gap-6
+md:grid-cols-4
+">
+
+
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-6
+shadow
+">
+
+
+<p className="
+text-gray-500
+">
+
+Listings
+
+</p>
+
+
+<h3 className="
+mt-2
+text-4xl
+font-black
+">
+
+{products.length}
+
+</h3>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-6
+shadow
+">
+
+
+<p className="
+text-gray-500
+">
+
+Views
+
+</p>
+
+
+<h3 className="
+mt-2
+text-4xl
+font-black
+">
+
+{views}
+
+</h3>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-6
+shadow
+">
+
+
+<p className="
+text-gray-500
+">
+
+Favorites
+
+</p>
+
+
+<h3 className="
+mt-2
+text-4xl
+font-black
+">
+
+{favorites}
+
+</h3>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-6
+shadow
+">
+
+
+<p className="
+text-gray-500
+">
+
+Rating
+
+</p>
+
+
+<h3 className="
+mt-2
+text-4xl
+font-black
+">
+
+⭐ {profile.seller_rating || "5.0"}
+
+</h3>
+
+
+</div>
+
+
+
+
+
+</section>
+
+
+
+
+
+
+
+
+{/* ACTION BUTTONS */}
+
+
+
+<section className="
+mt-8
+grid
+gap-5
+md:grid-cols-4
+">
+
+
+
+<Link
+
+href="/sell"
+
+className="
+rounded-2xl
+bg-indigo-600
+p-6
+text-center
+text-xl
+font-black
+text-white
+"
+
+>
+
+➕ Create Listing
+
+</Link>
+
+
+
+
+
+<Link
+
+href="/messages"
+
+className="
+rounded-2xl
+bg-black
+p-6
+text-center
+text-xl
+font-black
+text-white
+"
+
+>
+
+💬 Messages
+
+</Link>
+
+
+
+
+
+<Link
+
+href={`/seller/${user.id}`}
+
+className="
+rounded-2xl
+bg-white
+p-6
+text-center
+text-xl
+font-black
+shadow
+"
+
+>
+
+🏪 My Store
+
+</Link>
+
+
+
+
+
+<Link
+
+href="/store/settings"
+
+className="
+rounded-2xl
+bg-white
+p-6
+text-center
+text-xl
+font-black
+shadow
+"
+
+>
+
+⚙ Settings
+
+</Link>
+
+
+
+
+</section>
+{/* ================= MY LISTINGS ================= */}
+
+
+<section className="
+mt-12
+">
+
+
+<div className="
+mb-8
+flex
+items-center
+justify-between
+">
+
+
+<div>
+
+<h2 className="
+text-3xl
+font-black
+">
+
+My Listings
+
+</h2>
+
+
+<p className="
+mt-2
+text-gray-500
+">
+
+Manage your products and grow your sales.
+
+</p>
+
+
+</div>
+
+
+
+
+<Link
+
+href="/sell"
+
+className="
+rounded-xl
+bg-black
+px-6
+py-3
+font-bold
+text-white
+"
+
+>
+
++ Add Product
+
+</Link>
+
+
+
+</div>
+
+
+
+
+
+
+
+{
+
+products.length === 0 ? (
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-12
+text-center
+shadow
+">
+
+
+<div className="
+text-6xl
+">
+
+📦
+
+</div>
+
+
+<h3 className="
+mt-5
+text-2xl
+font-black
+">
+
+No listings yet
+
+</h3>
+
+
+
+<p className="
+mt-3
+text-gray-500
+">
+
+Create your first Halo listing.
+
+</p>
+
+
+
+
+<Link
+
+href="/sell"
+
+className="
+mt-6
+inline-block
+rounded-xl
+bg-black
+px-8
+py-4
+font-bold
+text-white
+"
+
+>
+
+Create Listing
+
+</Link>
+
+
+</div>
+
+
+
+
+):(
+
+
+
+
+
+<div className="
+grid
+gap-6
+sm:grid-cols-2
+lg:grid-cols-4
+">
+
+
+
+
+
+{
+
+products.map(product=>(
+
+
+
+<div
+
+key={product.id}
+
+className="
+overflow-hidden
+rounded-3xl
+bg-white
+shadow
+"
+
+>
+
+
+
+
+
+
+
+<Link
+
+href={`/product/${product.slug}`}
+
+>
+
+
+
+<div className="
+relative
+h-56
+bg-gray-100
+">
+
+
+
+
+
+{
+
+product.image ? (
+
+
+<Image
+
+src={product.image}
+
+alt={product.title}
+
+fill
+
+className="
+object-cover
+"
+
+/>
+
+
+
+):(
+
+
+<div className="
+flex
+h-full
+items-center
+justify-center
+text-5xl
+">
+
+📦
+
+</div>
+
+
+)
+
+
+
+}
+
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+p-5
+">
+
+
+<h3 className="
+truncate
+font-black
+">
+
+{product.title}
+
+</h3>
+
+
+
+<p className="
+mt-3
+text-2xl
+font-black
+">
+
+{formatPrice(product.price)}
+
+</p>
+
+
+
+
+<div className="
+mt-3
+flex
+items-center
+justify-between
+">
+
+
+<span className="
+rounded-full
+bg-gray-100
+px-3
+py-1
+text-xs
+font-bold
+">
+
+{
+product.status ||
+"active"
+}
+
+</span>
+
+
+
+
+
+<span className="
+text-xs
+text-gray-500
+">
+
+{product.category}
+
+</span>
+
+
+
+</div>
+
+
+
+</div>
+
+
+</Link>
+
+
+
+
+
+
+
+
+<div className="
+flex
+gap-2
+border-t
+p-5
+">
+
+
+
+
+
+<Link
+
+href={`/product/edit/${product.slug}`}
+
+className="
+flex-1
+rounded-xl
+bg-gray-100
+py-3
+text-center
+text-sm
+font-bold
+"
+
+>
+
+Edit
+
+</Link>
+
+
+
+
+
+
+
+<form
+
+action={deleteProduct}
+
+className="
+flex-1
+"
+
+>
+
+
+<input
+
+type="hidden"
+
+name="productId"
+
+value={product.id}
+
+/>
+
+
+
+
+<button
+
+className="
+w-full
+rounded-xl
+bg-red-100
+py-3
+text-sm
+font-bold
+text-red-700
+"
+
+>
+
+Delete
+
+</button>
+
+
+
+</form>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+</div>
+
+
+
+))
+
+}
+
+
+
+
+
+</div>
+
+
+
+
+)
+
+}
+
+
+
+
+
+</section>
+
+
+
+
+
+
+
+
+
+{/* ================= SELLER GROWTH ================= */}
+
+
+
+<section className="
+mt-12
+rounded-3xl
+bg-white
+p-8
+shadow
+">
+
+
+
+<div className="
+grid
+gap-8
+md:grid-cols-2
+">
+
+
+
+
+
+<div>
+
+
+<h2 className="
+text-3xl
+font-black
+">
+
+Grow Your Store 🚀
+
+</h2>
+
+
+
+<p className="
+mt-4
+text-gray-600
+">
+
+Unlock more visibility and reach more buyers with Halo Seller Pro.
+
+</p>
+
+
+
+
+<ul className="
+mt-6
+space-y-3
+font-semibold
+">
+
+
+<li>
+✓ Featured product placement
+</li>
+
+
+<li>
+✓ Verified seller badge
+</li>
+
+
+<li>
+✓ Seller analytics
+</li>
+
+
+<li>
+✓ Priority support
+</li>
+
+
+</ul>
+
+
+
+</div>
+
+
+
+
+
+
+<div className="
+rounded-3xl
+bg-black
+p-8
+text-white
+">
+
+
+<h3 className="
+text-2xl
+font-black
+">
+
+Halo Pro Seller
+
+</h3>
+
+
+
+<p className="
+mt-3
+text-gray-300
+">
+
+Build your marketplace business.
+
+</p>
+
+
+
+
+
+<Link
+
+href="/pricing"
+
+className="
+mt-6
+inline-block
+rounded-xl
+bg-white
+px-6
+py-3
+font-bold
+text-black
+"
+
+>
+
+Upgrade
+
+</Link>
+
+
+
+</div>
+
+
+
+
+
+</div>
+
+
+
+</section>
+
+
+
+
+
+</div>
+
+
+</main>
+
+
+);
+
 }
