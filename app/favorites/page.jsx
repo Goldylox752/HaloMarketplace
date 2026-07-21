@@ -10,7 +10,6 @@ async function getFavorites(){
   const supabase = await createClient();
 
 
-
   const {
     data:{
       user
@@ -31,22 +30,21 @@ async function getFavorites(){
     data:favorites,
     error
   } = await supabase
-
-  .from("favorites")
-
-  .select("product_id, created_at")
-
-  .eq("user_id", user.id)
-
-  .order("created_at", {
-    ascending:false
-  });
+    .from("favorites")
+    .select(`
+      product_id,
+      created_at
+    `)
+    .eq("user_id", user.id)
+    .order("created_at", {
+      ascending:false
+    });
 
 
 
   if(error){
 
-    console.log("Favorites error:", error);
+    console.log(error);
 
     return [];
 
@@ -54,7 +52,7 @@ async function getFavorites(){
 
 
 
-  if(!favorites || favorites.length === 0){
+  if(!favorites?.length){
 
     return [];
 
@@ -63,35 +61,32 @@ async function getFavorites(){
 
 
   const productIds = favorites.map(
-    favorite => favorite.product_id
+    item => item.product_id
   );
 
 
 
   const {
     data:products,
-    error:productError
+    error:productsError
   } = await supabase
-
-  .from("products")
-
-  .select(`
-    id,
-    title,
-    price,
-    image,
-    location,
-    slug,
-    category
-  `)
-
-  .in("id", productIds);
+    .from("products")
+    .select(`
+      id,
+      title,
+      price,
+      image,
+      location,
+      slug,
+      category
+    `)
+    .in("id", productIds);
 
 
 
-  if(productError){
+  if(productsError){
 
-    console.log("Products error:", productError);
+    console.log(productsError);
 
     return [];
 
@@ -99,7 +94,14 @@ async function getFavorites(){
 
 
 
-  return products || [];
+  // Keep favorites newest first
+
+  return productIds
+    .map(id =>
+      products.find(product => product.id === id)
+    )
+    .filter(Boolean);
+
 
 }
 
@@ -107,12 +109,13 @@ async function getFavorites(){
 
 
 
+
 export const metadata = {
 
-  title:"My Favorites | Halo Marketplace",
+  title:"Favorites | Halo Marketplace",
 
   description:
-  "View your saved listings on Halo Marketplace."
+  "Your saved Halo Marketplace listings."
 
 };
 
@@ -126,8 +129,6 @@ export default async function FavoritesPage(){
 
 
 const products = await getFavorites();
-
-
 
 
 
@@ -145,10 +146,7 @@ px-6
 ">
 
 
-<div className="
-max-w-6xl
-mx-auto
-">
+<div className="max-w-6xl mx-auto">
 
 
 <h1 className="
@@ -156,18 +154,18 @@ text-5xl
 font-black
 ">
 
-❤️ My Favorites
+❤️ Favorites
 
 </h1>
 
 
 <p className="
 mt-4
-text-gray-300
 text-lg
+text-gray-300
 ">
 
-Listings you saved for later.
+Your saved marketplace listings.
 
 </p>
 
@@ -192,15 +190,13 @@ py-12
 
 
 
-
-
 {
 products.length === 0 ? (
 
 
 <div className="
-bg-white
 rounded-3xl
+bg-white
 p-12
 text-center
 shadow
@@ -222,7 +218,7 @@ mt-4
 text-gray-500
 ">
 
-Browse Halo Marketplace and save listings you like.
+Save listings while browsing Halo Marketplace.
 
 </p>
 
@@ -233,8 +229,8 @@ Browse Halo Marketplace and save listings you like.
 href="/browse"
 
 className="
-inline-block
 mt-6
+inline-block
 rounded-xl
 bg-black
 px-8
@@ -245,9 +241,10 @@ text-white
 
 >
 
-Browse Listings
+Browse Marketplace
 
 </Link>
+
 
 
 </div>
@@ -267,10 +264,8 @@ gap-6
 ">
 
 
-
 {
-
-products.map((product)=>(
+products.map(product => (
 
 
 <Link
@@ -288,8 +283,8 @@ transition
 hover:shadow-xl
 "
 
->
 
+>
 
 
 <div className="
@@ -300,7 +295,6 @@ bg-gray-100
 
 
 {
-
 product.image ? (
 
 
@@ -312,14 +306,9 @@ alt={product.title}
 
 fill
 
-sizes="
-(max-width:768px) 100vw,
-25vw
-"
+sizes="(max-width:768px) 100vw, 25vw"
 
-className="
-object-cover
-"
+className="object-cover"
 
 />
 
@@ -343,6 +332,7 @@ No Image
 )
 
 }
+
 
 
 </div>
@@ -373,7 +363,13 @@ text-2xl
 font-black
 ">
 
-${Number(product.price).toLocaleString("en-CA")}
+{Number(product.price).toLocaleString(
+"en-CA",
+{
+style:"currency",
+currency:"CAD"
+}
+)}
 
 </p>
 
@@ -394,7 +390,6 @@ text-gray-500
 
 
 {
-
 product.category && (
 
 
@@ -428,7 +423,6 @@ font-medium
 
 
 ))
-
 
 }
 
