@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-
 import { createClient } from "@/lib/supabase/server";
 
 
 
 const stripe = new Stripe(
-process.env.STRIPE_SECRET_KEY
+  process.env.STRIPE_SECRET_KEY,
+  {
+    apiVersion: "2025-06-30.basil",
+  }
 );
 
 
@@ -21,9 +23,7 @@ try{
 
 const {
 productId
-
 }= await request.json();
-
 
 
 
@@ -45,19 +45,18 @@ status:400
 
 
 
+const supabase =
+await createClient();
 
 
-const supabase = await createClient();
 
 
 
-
+// Check user
 
 const {
-
 data:{
 user
-
 }
 
 }= await supabase.auth.getUser();
@@ -85,10 +84,10 @@ status:401
 
 
 
+// Get product
+
 const {
-
 data:product,
-
 error
 
 }= await supabase
@@ -96,19 +95,13 @@ error
 .from("products")
 
 .select(`
-
 id,
-
 title,
-
 price,
-
 image,
-
+description,
 seller_id,
-
-description
-
+status
 `)
 
 .eq(
@@ -125,7 +118,6 @@ productId
 
 
 if(error || !product){
-
 
 return NextResponse.json(
 {
@@ -144,6 +136,31 @@ status:404
 
 
 
+// Check availability
+
+if(product.status !== "active"){
+
+
+return NextResponse.json(
+{
+error:"This item is unavailable"
+},
+{
+status:400
+}
+);
+
+
+}
+
+
+
+
+
+
+
+// Prevent seller purchase
+
 if(product.seller_id === user.id){
 
 
@@ -156,6 +173,7 @@ status:400
 }
 );
 
+
 }
 
 
@@ -164,7 +182,79 @@ status:400
 
 
 
-const session = await stripe.checkout.sessions.create({
+// Create pending order
+
+
+const {
+data:order,
+error:orderError
+
+}= await supabase
+
+.from("orders")
+
+.insert({
+
+buyer_id:user.id,
+
+seller_id:product.seller_id,
+
+product_id:product.id,
+
+amount:Number(product.price),
+
+payment_status:"unpaid",
+
+status:"pending"
+
+})
+
+.select()
+
+.single();
+
+
+
+
+
+
+
+if(orderError){
+
+
+console.error(
+orderError
+);
+
+
+return NextResponse.json(
+{
+error:"Order creation failed"
+},
+{
+status:500
+}
+);
+
+
+}
+
+
+
+
+
+
+
+// Stripe checkout
+
+
+const session =
+
+await stripe.checkout.sessions.create({
+
+
+
+mode:"payment",
 
 
 
@@ -178,17 +268,12 @@ payment_method_types:[
 
 
 
-mode:"payment",
-
-
-
-
-
 line_items:[
 
 {
 
 price_data:{
+
 
 currency:"cad",
 
@@ -196,36 +281,46 @@ currency:"cad",
 
 product_data:{
 
+
 name:product.title,
 
 
 description:
 product.description ||
-"Halo Marketplace item",
+"Halo Marketplace protected purchase",
 
 
 
 images:
 product.image
 ?
-[product.image]
+[
+product.image
+]
 :
 []
 
+
 },
+
+
 
 
 
 unit_amount:
+
 Math.round(
 Number(product.price) * 100
 )
+
 
 },
 
 
 
+
 quantity:1
+
 
 }
 
@@ -239,13 +334,20 @@ quantity:1
 metadata:{
 
 
-productId:product.id,
+orderId:
+order.id,
 
 
-buyerId:user.id,
+productId:
+product.id,
 
 
-sellerId:product.seller_id
+buyerId:
+user.id,
+
+
+sellerId:
+product.seller_id
 
 
 },
@@ -256,7 +358,7 @@ sellerId:product.seller_id
 
 success_url:
 
-`${process.env.NEXT_PUBLIC_SITE_URL}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
+`${process.env.NEXT_PUBLIC_SITE_URL}/orders/${order.id}?success=true`,
 
 
 
@@ -264,7 +366,7 @@ success_url:
 
 cancel_url:
 
-`${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel`
+`${process.env.NEXT_PUBLIC_SITE_URL}/product/${product.id}`
 
 
 
@@ -276,9 +378,35 @@ cancel_url:
 
 
 
+// Save stripe session
+
+
+await supabase
+
+.from("orders")
+
+.update({
+
+stripe_session_id:
+session.id
+
+})
+
+.eq(
+"id",
+order.id
+);
+
+
+
+
+
+
+
 return NextResponse.json({
 
-url:session.url
+url:
+session.url
 
 });
 
