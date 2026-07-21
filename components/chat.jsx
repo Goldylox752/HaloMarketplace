@@ -7,11 +7,13 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function Chat({
 
-user,
+  user,
 
-receiverId,
+  receiverId,
 
-initialMessages = []
+  conversationId,
+
+  initialMessages = [],
 
 }){
 
@@ -19,8 +21,9 @@ initialMessages = []
 const supabase = createClient();
 
 
+
 const [messages,setMessages] = useState(
-initialMessages
+  initialMessages
 );
 
 
@@ -28,16 +31,24 @@ const [text,setText] = useState("");
 
 const [loading,setLoading] = useState(false);
 
+const [error,setError] = useState("");
 
 
 
+
+
+// REALTIME LISTENER
 
 useEffect(()=>{
 
 
+if(!conversationId) return;
+
+
+
 const channel = supabase
 
-.channel("messages")
+.channel(`conversation-${conversationId}`)
 
 .on(
 
@@ -49,41 +60,45 @@ event:"INSERT",
 
 schema:"public",
 
-table:"messages"
+table:"messages",
+
+filter:
+`conversation_id=eq.${conversationId}`
 
 },
 
 (payload)=>{
 
 
-const newMessage = payload.new;
+const incoming = payload.new;
 
 
 
-if(
-
-(newMessage.sender_id === user.id &&
-newMessage.receiver_id === receiverId)
-
-||
-
-(newMessage.sender_id === receiverId &&
-newMessage.receiver_id === user.id)
-
-){
+setMessages((prev)=>{
 
 
-setMessages(prev=>[
+const exists = prev.some(
+(msg)=>msg.id === incoming.id
+);
 
-...prev,
 
-newMessage
+if(exists){
 
-]);
-
+return prev;
 
 }
 
+
+return [
+
+...prev,
+
+incoming
+
+];
+
+
+});
 
 
 }
@@ -104,7 +119,7 @@ supabase.removeChannel(channel);
 
 
 
-},[user.id,receiverId]);
+},[conversationId]);
 
 
 
@@ -120,8 +135,26 @@ async function sendMessage(){
 if(!text.trim()) return;
 
 
+if(!conversationId){
+
+setError(
+"No conversation found"
+);
+
+return;
+
+}
+
+
 
 setLoading(true);
+
+setError("");
+
+
+
+
+const messageText = text.trim();
 
 
 
@@ -138,11 +171,13 @@ error
 
 .insert({
 
+conversation_id:conversationId,
+
 sender_id:user.id,
 
 receiver_id:receiverId,
 
-message:text.trim()
+message:messageText
 
 })
 
@@ -154,8 +189,27 @@ message:text.trim()
 
 
 
-if(!error && data){
 
+if(error){
+
+
+console.error(error);
+
+setError(
+"Failed to send message"
+);
+
+setLoading(false);
+
+return;
+
+}
+
+
+
+
+
+// Optimistic update
 
 setMessages(prev=>[
 
@@ -166,16 +220,33 @@ data
 ]);
 
 
-}
-
-
 
 setText("");
 
 setLoading(false);
 
 
+
 }
+
+
+
+
+
+
+
+function handleKeyDown(e){
+
+
+if(e.key==="Enter"){
+
+sendMessage();
+
+}
+
+
+}
+
 
 
 
@@ -185,21 +256,30 @@ setLoading(false);
 
 return (
 
-<div className="mt-8">
+<div className="
+flex
+h-full
+flex-col
+p-5
+">
+
+
 
 
 
 <div className="
-h-96
+flex-1
 overflow-y-auto
+space-y-3
 rounded-xl
 border
 p-5
-space-y-3
+bg-white
 ">
 
 
 {
+
 
 messages.map((msg)=>(
 
@@ -214,17 +294,19 @@ msg.sender_id === user.id
 
 ?
 
-"ml-auto max-w-xs rounded-xl bg-indigo-600 p-3 text-white"
+"ml-auto max-w-xs rounded-2xl bg-indigo-600 p-4 text-white"
 
 :
 
-"max-w-xs rounded-xl bg-gray-100 p-3"
+"max-w-xs rounded-2xl bg-gray-100 p-4 text-gray-900"
 
 }
 
 >
 
+
 {msg.message}
+
 
 
 </div>
@@ -232,11 +314,34 @@ msg.sender_id === user.id
 
 ))
 
+
 }
 
 
 
 </div>
+
+
+
+
+
+
+
+
+{error && (
+
+<p className="
+mt-3
+text-sm
+font-bold
+text-red-500
+">
+
+{error}
+
+</p>
+
+)}
 
 
 
@@ -245,7 +350,7 @@ msg.sender_id === user.id
 
 
 <div className="
-mt-5
+mt-4
 flex
 gap-3
 ">
@@ -255,9 +360,11 @@ gap-3
 
 value={text}
 
-onChange={
-e=>setText(e.target.value)
+onChange={(e)=>
+setText(e.target.value)
 }
+
+onKeyDown={handleKeyDown}
 
 placeholder="Write a message..."
 
@@ -265,7 +372,11 @@ className="
 flex-1
 rounded-xl
 border
-p-4
+px-4
+py-3
+outline-none
+focus:ring-2
+focus:ring-indigo-500
 "
 
 />
@@ -286,23 +397,34 @@ bg-indigo-600
 px-6
 font-bold
 text-white
+disabled:opacity-50
 "
 
 >
 
+
 {
+
 loading
+
 ?
+
 "Sending..."
+
 :
+
 "Send"
+
 }
+
 
 </button>
 
 
 
 </div>
+
+
 
 
 
