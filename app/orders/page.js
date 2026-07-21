@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -13,14 +14,10 @@ const supabase = await createClient();
 
 
 const {
-
 data:{
 user
-
 }
-
-}=await supabase.auth.getUser();
-
+}= await supabase.auth.getUser();
 
 
 
@@ -33,49 +30,52 @@ redirect("/login");
 
 
 
-
 const {data:orders,error}=await supabase
 
 .from("orders")
 
 .select(`
 
-*,
+id,
+
+amount,
+
+status,
+
+created_at,
+
+buyer_id,
+
+seller_id,
 
 products(
 
 id,
 
+slug,
+
 title,
 
 image,
 
-price,
+location,
 
-location
+price
 
 )
 
 `)
 
 .or(
-
 `buyer_id.eq.${user.id},seller_id.eq.${user.id}`
-
 )
 
 .order(
-
 "created_at",
-
 {
-
 ascending:false
-
 }
-
 );
-
 
 
 
@@ -83,7 +83,7 @@ ascending:false
 
 if(error){
 
-console.log(error);
+console.error(error);
 
 return [];
 
@@ -91,7 +91,7 @@ return [];
 
 
 
-return orders || [];
+return orders ?? [];
 
 }
 
@@ -100,7 +100,6 @@ return orders || [];
 
 
 function formatPrice(price){
-
 
 return new Intl.NumberFormat(
 
@@ -116,9 +115,26 @@ currency:"CAD"
 
 ).format(price || 0);
 
-
 }
 
+
+
+
+function formatDate(date){
+
+
+return new Date(date)
+
+.toLocaleDateString(
+"en-CA",
+{
+year:"numeric",
+month:"long",
+day:"numeric"
+}
+);
+
+}
 
 
 
@@ -132,15 +148,16 @@ const orders = await getOrders();
 
 
 
-
 return (
 
-<main className="min-h-screen bg-gray-50 py-12 px-6">
+<main className="min-h-screen bg-gray-50 px-6 py-16">
+
+
+<div className="mx-auto max-w-7xl">
 
 
 
-<div className="max-w-7xl mx-auto">
-
+<div className="mb-10">
 
 
 <h1 className="text-5xl font-black">
@@ -150,12 +167,14 @@ Orders
 </h1>
 
 
+<p className="mt-3 text-lg text-gray-600">
 
-<p className="text-gray-500 mt-3">
-
-Manage purchases and sales on Halo.
+Track purchases and sales from your Halo Market account.
 
 </p>
+
+
+</div>
 
 
 
@@ -164,19 +183,34 @@ Manage purchases and sales on Halo.
 
 
 {
-
 orders.length === 0 ? (
 
 
+<div className="rounded-3xl bg-white p-16 text-center shadow-sm">
 
-<div className="bg-white rounded-3xl shadow p-10 mt-10 text-center">
+
+<div className="text-7xl">
+
+📦
+
+</div>
 
 
-<h2 className="text-2xl font-bold">
 
-No orders yet
+<h2 className="mt-6 text-3xl font-black">
+
+No Orders Yet
 
 </h2>
+
+
+
+<p className="mt-3 text-gray-600">
+
+Your purchases and sales will appear here.
+
+</p>
+
 
 
 
@@ -184,13 +218,14 @@ No orders yet
 
 href="/products"
 
-className="inline-block mt-5 bg-indigo-600 text-white px-6 py-3 rounded-xl"
+className="mt-8 inline-block rounded-xl bg-indigo-600 px-8 py-4 font-bold text-white hover:bg-indigo-700"
 
 >
 
 Browse Marketplace
 
 </Link>
+
 
 
 </div>
@@ -203,23 +238,20 @@ Browse Marketplace
 
 
 
-<div className="grid lg:grid-cols-2 gap-8 mt-10">
+<div className="grid gap-8 lg:grid-cols-2">
 
 
 
 
 
-{
-
-orders.map((order)=>(
-
+{orders.map((order)=>(
 
 
 <div
 
 key={order.id}
 
-className="bg-white rounded-3xl shadow p-6"
+className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-xl"
 
 >
 
@@ -232,13 +264,12 @@ className="bg-white rounded-3xl shadow p-6"
 
 
 
-<div className="w-32 h-32 bg-gray-100 rounded-2xl overflow-hidden">
+<div className="relative h-32 w-32 overflow-hidden rounded-2xl bg-gray-100">
 
 
 {
 
 order.products?.image ? (
-
 
 
 <Image
@@ -247,11 +278,9 @@ src={order.products.image}
 
 alt={order.products.title}
 
-width={200}
+fill
 
-height={200}
-
-className="w-full h-full object-cover"
+className="object-cover"
 
 />
 
@@ -260,8 +289,7 @@ className="w-full h-full object-cover"
 ):(
 
 
-
-<div className="flex items-center justify-center h-full text-5xl">
+<div className="flex h-full items-center justify-center text-5xl">
 
 📦
 
@@ -270,6 +298,7 @@ className="w-full h-full object-cover"
 
 )
 
+
 }
 
 
@@ -283,18 +312,18 @@ className="w-full h-full object-cover"
 
 
 
-<div>
+<div className="flex-1">
 
 
-<h2 className="text-xl font-bold">
+<h2 className="text-xl font-black">
 
-{order.products?.title}
+{order.products?.title || "Product"}
 
 </h2>
 
 
 
-<p className="text-indigo-600 text-xl font-bold mt-2">
+<p className="mt-2 text-2xl font-black text-indigo-600">
 
 {formatPrice(order.amount)}
 
@@ -302,16 +331,13 @@ className="w-full h-full object-cover"
 
 
 
+<p className="mt-2 text-gray-500">
 
-<p className="text-gray-500 mt-2">
-
-📍 {order.products?.location}
+📍 {order.products?.location || "Canada"}
 
 </p>
 
 
-
-
 </div>
 
 
@@ -325,22 +351,31 @@ className="w-full h-full object-cover"
 
 
 
-<div className="border-t mt-6 pt-5 flex justify-between items-center">
+
+<div className="mt-6 flex items-center justify-between border-t pt-5">
 
 
 <div>
 
 
-<p className="font-semibold">
+<p className="font-bold">
 
 Status
 
 </p>
 
 
-<p className="text-gray-500 capitalize">
+<span className="mt-1 inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-700">
 
 {order.status}
+
+</span>
+
+
+
+<p className="mt-2 text-sm text-gray-500">
+
+{formatDate(order.created_at)}
 
 </p>
 
@@ -351,11 +386,14 @@ Status
 
 
 
+{order.products?.slug && (
+
+
 <Link
 
-href={`/products/${order.products?.id}`}
+href={`/product/${order.products.slug}`}
 
-className="text-indigo-600 font-bold"
+className="font-bold text-indigo-600 hover:text-indigo-700"
 
 >
 
@@ -364,6 +402,9 @@ View Product →
 </Link>
 
 
+)}
+
+
 
 </div>
 
@@ -371,16 +412,11 @@ View Product →
 
 
 
+
 </div>
 
 
-
-))
-
-
-}
-
-
+))}
 
 
 
@@ -389,6 +425,7 @@ View Product →
 
 
 )
+
 
 }
 
@@ -399,7 +436,7 @@ View Product →
 
 </main>
 
+);
 
-)
 
 }
