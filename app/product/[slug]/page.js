@@ -4,13 +4,12 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 
-
 async function getProduct(slug){
 
   const supabase = await createClient();
 
 
-  const {data,error} = await supabase
+  const {data,error}=await supabase
 
   .from("products")
 
@@ -22,24 +21,12 @@ async function getProduct(slug){
     description,
     location,
     category,
-    created_at,
+    slug,
     seller_id,
-    profiles(
-      id,
-      username,
-      avatar,
-      bio,
-      location,
-      verified,
-      seller_rating,
-      sales_count
-    )
+    created_at
   `)
 
-  .eq(
-    "slug",
-    slug
-  )
+  .eq("slug",slug)
 
   .single();
 
@@ -52,6 +39,53 @@ async function getProduct(slug){
   }
 
 
+  return data;
+
+}
+
+
+
+
+
+
+async function getSeller(id){
+
+  if(!id){
+
+    return null;
+
+  }
+
+
+  const supabase = await createClient();
+
+
+  const {data,error}=await supabase
+
+  .from("profiles")
+
+  .select(`
+    id,
+    username,
+    avatar,
+    verified,
+    seller_rating,
+    sales_count,
+    location
+  `)
+
+  .eq("id",id)
+
+  .single();
+
+
+
+  if(error){
+
+    return null;
+
+  }
+
 
   return data;
 
@@ -62,69 +96,15 @@ async function getProduct(slug){
 
 
 
-
-async function getSimilarProducts(category, productId){
-
-  const supabase = await createClient();
-
-
-  const {data,error} = await supabase
-
-  .from("products")
-
-  .select(`
-    id,
-    title,
-    price,
-    image,
-    slug,
-    location,
-    category
-  `)
-
-  .eq(
-    "category",
-    category
-  )
-
-  .neq(
-    "id",
-    productId
-  )
-
-  .limit(6);
-
-
-
-  if(error){
-
-    console.error(error);
-
-    return [];
-
-  }
-
-
-
-  return data || [];
-
-}
-
-
-
-
-
-
-
 function formatPrice(price){
 
-  return new Intl.NumberFormat(
-    "en-CA",
-    {
-      style:"currency",
-      currency:"CAD"
-    }
-  ).format(price || 0);
+return new Intl.NumberFormat(
+"en-CA",
+{
+style:"currency",
+currency:"CAD"
+}
+).format(price || 0);
 
 }
 
@@ -137,38 +117,24 @@ function formatPrice(price){
 export async function generateMetadata({params}){
 
 
-  const product =
-  await getProduct(
-    params.slug
-  );
+const {slug}=await params;
+
+
+const product =
+await getProduct(slug);
 
 
 
-  if(!product){
+return {
 
-    return {
+title:
+product
+?
+`${product.title} | Halo Marketplace`
+:
+"Halo Marketplace"
 
-      title:
-      "Halo Marketplace"
-
-    };
-
-  }
-
-
-
-
-  return {
-
-    title:
-    `${product.title} | Halo Marketplace`,
-
-
-    description:
-    product.description?.slice(0,160)
-
-  };
-
+};
 
 }
 
@@ -181,80 +147,29 @@ export async function generateMetadata({params}){
 export default async function ProductPage({params}){
 
 
-  const product =
-  await getProduct(
-    params.slug
-  );
+const {slug}=await params;
 
 
 
-  if(!product){
-
-    notFound();
-
-  }
+const product =
+await getProduct(slug);
 
 
 
+if(!product){
 
-  const seller =
-  product.profiles;
+notFound();
 
-
-
-  const similarProducts =
-  await getSimilarProducts(
-    product.category,
-    product.id
-  );
+}
 
 
 
-  const schema = {
-
-    "@context":"https://schema.org",
-
-    "@type":"Product",
-
-    "name":
-    product.title,
+const seller =
+await getSeller(
+product.seller_id
+);
 
 
-    "description":
-    product.description,
-
-
-    "image":
-    product.image,
-
-
-    "offers":{
-
-      "@type":"Offer",
-
-      "priceCurrency":"CAD",
-
-      "price":
-      product.price,
-
-
-      "availability":
-      "https://schema.org/InStock"
-
-    },
-
-
-    "seller":{
-
-      "@type":"Person",
-
-      "name":
-      seller?.username || "Halo Seller"
-
-    }
-
-
-  };
 
 
 
@@ -268,28 +183,17 @@ py-12
 ">
 
 
-<script
-
-type="application/ld+json"
-
-dangerouslySetInnerHTML={{
-
-__html:
-JSON.stringify(schema)
-
-}}
-
-/>
-
-
 <div className="
 mx-auto
 grid
-max-w-7xl
-gap-10
+max-w-6xl
+gap-8
 lg:grid-cols-3
 ">
-{/* ================= PRODUCT SECTION ================= */}
+
+
+
+{/* PRODUCT */}
 
 
 <section className="
@@ -299,7 +203,7 @@ lg:col-span-2
 
 <div className="
 relative
-h-[500px]
+h-[450px]
 overflow-hidden
 rounded-3xl
 bg-white
@@ -316,20 +220,19 @@ alt={product.title}
 
 fill
 
-className="
-object-cover
-"
+className="object-cover"
 
 />
 
-) : (
+):(
+
 
 <div className="
 flex
 h-full
 items-center
 justify-center
-text-7xl
+text-6xl
 ">
 
 📦
@@ -345,20 +248,11 @@ text-7xl
 
 
 
-
-
 <div className="
 mt-8
 rounded-3xl
 bg-white
 p-8
-">
-
-
-<div className="
-flex
-flex-wrap
-gap-3
 ">
 
 
@@ -377,33 +271,11 @@ font-bold
 
 
 
-<span className="
-rounded-full
-bg-green-100
-px-4
-py-2
-text-sm
-font-bold
-text-green-700
-">
-
-Available
-
-</span>
-
-
-</div>
-
-
-
-
-
 
 <h1 className="
-mt-6
+mt-5
 text-4xl
 font-black
-md:text-5xl
 ">
 
 {product.title}
@@ -413,11 +285,9 @@ md:text-5xl
 
 
 
-
-
 <p className="
-mt-5
-text-gray-600
+mt-4
+text-gray-500
 ">
 
 📍 {product.location || "Canada"}
@@ -427,11 +297,8 @@ text-gray-600
 
 
 
-
-
-
 <p className="
-mt-8
+mt-6
 text-4xl
 font-black
 ">
@@ -443,42 +310,15 @@ font-black
 
 
 
-
-
-
-
-<div className="
-mt-8
-border-t
-pt-8
-">
-
-
-<h2 className="
-text-2xl
-font-black
-">
-
-Description
-
-</h2>
-
-
-
 <p className="
-mt-4
+mt-8
 leading-relaxed
 text-gray-700
 ">
 
-{product.description || 
-"No description provided."}
+{product.description || "No description available."}
 
 </p>
-
-
-</div>
-
 
 
 </div>
@@ -492,8 +332,7 @@ text-gray-700
 
 
 
-
-{/* ================= SELLER CARD ================= */}
+{/* SELLER */}
 
 
 <aside className="
@@ -501,7 +340,6 @@ h-fit
 rounded-3xl
 bg-white
 p-8
-shadow-sm
 ">
 
 
@@ -510,11 +348,9 @@ text-2xl
 font-black
 ">
 
-Seller Information
+Seller
 
 </h2>
-
-
 
 
 
@@ -526,41 +362,6 @@ flex
 items-center
 gap-4
 ">
-
-
-
-{seller?.avatar ? (
-
-
-<div className="
-relative
-h-16
-w-16
-overflow-hidden
-rounded-full
-">
-
-
-<Image
-
-src={seller.avatar}
-
-alt={seller.username || "Seller"}
-
-fill
-
-className="
-object-cover
-"
-
-/>
-
-
-</div>
-
-
-
-) : (
 
 
 <div className="
@@ -579,19 +380,13 @@ text-2xl
 </div>
 
 
-)}
-
-
-
-
 
 
 <div>
 
-
 <h3 className="
-text-xl
 font-black
+text-xl
 ">
 
 {seller?.username || "Halo Seller"}
@@ -601,13 +396,10 @@ font-black
 
 
 
+{seller?.verified && (
 
-
-{seller?.verified ? (
-
-<span className="
-mt-2
-inline-block
+<p className="
+mt-1
 rounded-full
 bg-green-100
 px-3
@@ -619,37 +411,15 @@ text-green-700
 
 ✓ Verified Seller
 
-</span>
-
-
-) : (
-
-
-<span className="
-mt-2
-inline-block
-rounded-full
-bg-gray-100
-px-3
-py-1
-text-xs
-font-bold
-">
-
-New Seller
-
-</span>
-
+</p>
 
 )}
 
 
-
 </div>
 
 
 </div>
-
 
 
 
@@ -658,106 +428,33 @@ New Seller
 
 
 <div className="
-mt-8
-grid
-grid-cols-2
-gap-4
-">
-
-
-<div className="
-rounded-2xl
-bg-gray-100
-p-4
-text-center
-">
-
-
-<p className="
-text-2xl
-font-black
-">
-
-⭐ {seller?.seller_rating || "New"}
-
-</p>
-
-
-<p className="
-text-sm
-text-gray-500
-">
-
-Rating
-
-</p>
-
-
-</div>
-
-
-
-
-
-<div className="
-rounded-2xl
-bg-gray-100
-p-4
-text-center
-">
-
-
-<p className="
-text-2xl
-font-black
-">
-
-{seller?.sales_count || 0}
-
-</p>
-
-
-<p className="
-text-sm
-text-gray-500
-">
-
-Sales
-
-</p>
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-<p className="
 mt-6
-text-sm
-text-gray-600
+rounded-2xl
+bg-gray-100
+p-4
 ">
 
-📍 {seller?.location || product.location || "Canada"}
 
+<p>
+⭐ {seller?.seller_rating || "New"} Rating
 </p>
 
 
+<p>
+🛒 {seller?.sales_count || 0} Sales
+</p>
+
+
+<p>
+📍 {seller?.location || product.location}
+</p>
+
+
+</div>
 
 
 
 
-<div className="
-mt-8
-flex
-flex-col
-gap-3
-">
 
 
 <Link
@@ -765,6 +462,8 @@ gap-3
 href={`/messages?seller=${seller?.id}`}
 
 className="
+mt-6
+block
 rounded-xl
 bg-black
 px-6
@@ -776,9 +475,10 @@ text-white
 
 >
 
-💬 Message Seller
+Message Seller
 
 </Link>
+
 
 
 
@@ -789,6 +489,8 @@ text-white
 href={`/seller/${seller?.id}`}
 
 className="
+mt-3
+block
 rounded-xl
 border
 px-6
@@ -799,266 +501,12 @@ font-bold
 
 >
 
-🏪 View Seller Store
+View Store
 
 </Link>
-
-
-</div>
-
-
-
-
-<button
-
-className="
-mt-6
-w-full
-rounded-xl
-bg-gray-100
-py-3
-font-bold
-"
-
->
-
-⚠️ Report Listing
-
-</button>
-
 
 
 </aside>
-{/* ================= SIMILAR PRODUCTS ================= */}
-
-
-<section className="
-col-span-full
-mt-10
-">
-
-
-<div className="
-rounded-3xl
-bg-white
-p-8
-">
-
-
-<div className="
-flex
-items-center
-justify-between
-">
-
-
-<h2 className="
-text-3xl
-font-black
-">
-
-Similar Products
-
-</h2>
-
-
-<Link
-
-href={`/browse?category=${product.category}`}
-
-className="
-font-bold
-text-indigo-600
-"
-
->
-
-View More →
-
-</Link>
-
-
-</div>
-
-
-
-
-
-
-
-<div className="
-mt-8
-grid
-gap-6
-sm:grid-cols-2
-lg:grid-cols-3
-">
-
-
-{similarProducts.length > 0 ? (
-
-similarProducts.map(item => (
-
-
-<Link
-
-key={item.id}
-
-href={`/product/${item.slug}`}
-
-className="
-overflow-hidden
-rounded-3xl
-border
-transition
-hover:shadow-xl
-"
-
->
-
-
-<div className="
-relative
-h-48
-bg-gray-100
-">
-
-
-{item.image ? (
-
-<Image
-
-src={item.image}
-
-alt={item.title}
-
-fill
-
-className="
-object-cover
-"
-
-/>
-
-) : (
-
-<div className="
-flex
-h-full
-items-center
-justify-center
-text-5xl
-">
-
-📦
-
-</div>
-
-)}
-
-
-
-</div>
-
-
-
-
-
-
-
-<div className="p-5">
-
-
-<span className="
-rounded-full
-bg-gray-100
-px-3
-py-1
-text-xs
-font-bold
-">
-
-{item.category || "General"}
-
-</span>
-
-
-
-
-
-<h3 className="
-mt-4
-truncate
-font-black
-">
-
-{item.title}
-
-</h3>
-
-
-
-
-
-<p className="
-mt-3
-text-xl
-font-black
-">
-
-{formatPrice(item.price)}
-
-</p>
-
-
-
-
-
-<p className="
-mt-2
-text-sm
-text-gray-500
-">
-
-📍 {item.location || "Canada"}
-
-</p>
-
-
-
-</div>
-
-
-</Link>
-
-
-))
-
-
-) : (
-
-
-<p className="
-text-gray-500
-">
-
-No similar products found.
-
-</p>
-
-
-)}
-
-
-</div>
-
-
-</div>
-
-
-</section>
-
-
 
 
 
