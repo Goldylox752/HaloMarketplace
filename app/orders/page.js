@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
 
 
-async function getOrders(){
+
+async function getOrder(id){
 
 
-const supabase = await createClient();
+const supabase =
+await createClient();
 
 
 
@@ -17,7 +19,8 @@ const {
 data:{
 user
 }
-}= await supabase.auth.getUser();
+
+}=await supabase.auth.getUser();
 
 
 
@@ -30,7 +33,13 @@ redirect("/login");
 
 
 
-const {data:orders,error}=await supabase
+
+
+const {
+data:order,
+error
+
+}=await supabase
 
 .from("orders")
 
@@ -42,58 +51,75 @@ amount,
 
 status,
 
+payment_status,
+
+tracking_number,
+
+delivered,
+
 created_at,
 
-buyer_id,
 
-seller_id,
-
-products(
+product:products(
 
 id,
-
-slug,
 
 title,
 
 image,
 
-location,
+slug,
 
-price
+location
+
+),
+
+
+
+seller:profiles!orders_seller_id_fkey(
+
+id,
+
+username,
+
+avatar,
+
+verified
 
 )
 
 `)
 
-.or(
-`buyer_id.eq.${user.id},seller_id.eq.${user.id}`
+.eq(
+"id",
+id
 )
 
-.order(
-"created_at",
-{
-ascending:false
-}
-);
+.eq(
+"buyer_id",
+user.id
+)
+
+.single();
 
 
 
 
 
-if(error){
 
-console.error(error);
+if(error || !order){
 
-return [];
-
-}
-
-
-
-return orders ?? [];
+return null;
 
 }
+
+
+
+return order;
+
+
+}
+
 
 
 
@@ -102,15 +128,10 @@ return orders ?? [];
 function formatPrice(price){
 
 return new Intl.NumberFormat(
-
 "en-CA",
-
 {
-
 style:"currency",
-
 currency:"CAD"
-
 }
 
 ).format(price || 0);
@@ -120,290 +141,448 @@ currency:"CAD"
 
 
 
-function formatDate(date){
 
 
-return new Date(date)
 
-.toLocaleDateString(
-"en-CA",
-{
-year:"numeric",
-month:"long",
-day:"numeric"
-}
+function StatusBadge({
+status
+}){
+
+
+const styles = {
+
+paid:
+"bg-green-100 text-green-700",
+
+processing:
+"bg-blue-100 text-blue-700",
+
+shipped:
+"bg-purple-100 text-purple-700",
+
+delivered:
+"bg-green-100 text-green-700",
+
+pending:
+"bg-yellow-100 text-yellow-700"
+
+};
+
+
+
+return (
+
+<span
+
+className={`
+rounded-full
+px-4
+py-2
+text-sm
+font-bold
+${styles[status] || styles.pending}
+`}
+
+>
+
+{status}
+
+</span>
+
 );
 
+
 }
 
 
 
 
 
-export default async function OrdersPage(){
 
 
-const orders = await getOrders();
+export async function generateMetadata({
+params
+}){
+
+
+const {
+id
+}=await params;
+
+
+const order =
+await getOrder(id);
+
+
+
+return {
+
+title:
+
+order
+
+?
+
+`Order ${order.id} | Halo Marketplace`
+
+:
+
+"Order Not Found"
+
+};
+
+
+}
+
+
+
+
+
+
+
+
+export default async function OrderPage({
+params
+}){
+
+
+const {
+id
+}=await params;
+
+
+
+const order =
+await getOrder(id);
+
+
+
+if(!order){
+
+notFound();
+
+}
+
 
 
 
 
 return (
 
-<main className="min-h-screen bg-gray-50 px-6 py-16">
+<main className="
+min-h-screen
+bg-gray-50
+px-6
+py-12
+">
 
 
-<div className="mx-auto max-w-7xl">
+
+<div className="
+mx-auto
+max-w-5xl
+">
 
 
 
-<div className="mb-10">
 
 
-<h1 className="text-5xl font-black">
 
-Orders
+<section className="
+rounded-3xl
+bg-white
+p-8
+shadow-sm
+">
+
+
+<div className="
+flex
+justify-between
+items-center
+gap-4
+flex-wrap
+">
+
+
+<div>
+
+<h1 className="
+text-4xl
+font-black
+">
+
+Your Order
 
 </h1>
 
 
-<p className="mt-3 text-lg text-gray-600">
+<p className="
+mt-2
+text-gray-500
+">
 
-Track purchases and sales from your Halo Market account.
-
-</p>
-
-
-</div>
-
-
-
-
-
-
-
-{
-orders.length === 0 ? (
-
-
-<div className="rounded-3xl bg-white p-16 text-center shadow-sm">
-
-
-<div className="text-7xl">
-
-📦
-
-</div>
-
-
-
-<h2 className="mt-6 text-3xl font-black">
-
-No Orders Yet
-
-</h2>
-
-
-
-<p className="mt-3 text-gray-600">
-
-Your purchases and sales will appear here.
+Order #{order.id}
 
 </p>
 
 
-
-
-<Link
-
-href="/products"
-
-className="mt-8 inline-block rounded-xl bg-indigo-600 px-8 py-4 font-bold text-white hover:bg-indigo-700"
-
->
-
-Browse Marketplace
-
-</Link>
-
-
-
 </div>
 
 
 
-):(
 
 
+<StatusBadge
 
-
-
-<div className="grid gap-8 lg:grid-cols-2">
-
-
-
-
-
-{orders.map((order)=>(
-
-
-<div
-
-key={order.id}
-
-className="rounded-3xl bg-white p-6 shadow-sm transition hover:shadow-xl"
-
->
-
-
-
-
-<div className="flex gap-5">
-
-
-
-
-
-<div className="relative h-32 w-32 overflow-hidden rounded-2xl bg-gray-100">
-
-
-{
-
-order.products?.image ? (
-
-
-<Image
-
-src={order.products.image}
-
-alt={order.products.title}
-
-fill
-
-className="object-cover"
+status={
+order.status
+}
 
 />
 
 
-
-):(
-
-
-<div className="flex h-full items-center justify-center text-5xl">
-
-📦
-
-</div>
-
-
-)
-
-
-}
-
-
-
 </div>
 
 
 
+</section>
 
 
 
 
 
-<div className="flex-1">
 
 
-<h2 className="text-xl font-black">
 
-{order.products?.title || "Product"}
+
+<section className="
+mt-8
+grid
+gap-8
+md:grid-cols-2
+">
+
+
+
+
+
+
+{/* PRODUCT */}
+
+
+<div className="
+rounded-3xl
+bg-white
+p-8
+">
+
+
+<h2 className="
+text-2xl
+font-black
+">
+
+Item
 
 </h2>
 
 
 
-<p className="mt-2 text-2xl font-black text-indigo-600">
+<div className="
+mt-6
+flex
+gap-5
+">
+
+
+<div className="
+relative
+h-28
+w-28
+overflow-hidden
+rounded-xl
+bg-gray-100
+">
+
+
+{
+
+order.product?.image &&
+
+<Image
+
+src={order.product.image}
+
+alt={order.product.title}
+
+fill
+
+className="
+object-cover
+"
+
+/>
+
+}
+
+
+</div>
+
+
+
+
+
+<div>
+
+
+<h3 className="
+text-xl
+font-black
+">
+
+{order.product?.title}
+
+</h3>
+
+
+<p className="
+mt-2
+text-gray-500
+">
+
+📍 {order.product?.location}
+
+</p>
+
+
+
+<p className="
+mt-3
+text-2xl
+font-black
+">
 
 {formatPrice(order.amount)}
 
 </p>
 
 
-
-<p className="mt-2 text-gray-500">
-
-📍 {order.products?.location || "Canada"}
-
-</p>
+</div>
 
 
 </div>
 
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<div className="mt-6 flex items-center justify-between border-t pt-5">
-
-
-<div>
-
-
-<p className="font-bold">
-
-Status
-
-</p>
-
-
-<span className="mt-1 inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-700">
-
-{order.status}
-
-</span>
-
-
-
-<p className="mt-2 text-sm text-gray-500">
-
-{formatDate(order.created_at)}
-
-</p>
-
-
-</div>
-
-
-
-
-
-{order.products?.slug && (
 
 
 <Link
 
-href={`/product/${order.products.slug}`}
+href={`/product/${order.product?.slug}`}
 
-className="font-bold text-indigo-600 hover:text-indigo-700"
+className="
+mt-6
+block
+rounded-xl
+border
+py-3
+text-center
+font-bold
+"
 
 >
 
-View Product →
+View Product
 
 </Link>
 
 
-)}
+</div>
 
+
+
+
+
+
+
+
+
+{/* DELIVERY */}
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-8
+">
+
+
+<h2 className="
+text-2xl
+font-black
+">
+
+Delivery
+
+</h2>
+
+
+
+
+<div className="
+mt-6
+space-y-4
+">
+
+
+<div>
+
+<p className="
+text-gray-500
+">
+
+Payment
+
+</p>
+
+
+<p className="
+font-bold
+">
+
+{order.payment_status}
+
+</p>
+
+
+</div>
+
+
+
+
+
+<div>
+
+<p className="
+text-gray-500
+">
+
+Tracking Number
+
+</p>
+
+
+<p className="
+font-bold
+">
+
+{
+order.tracking_number
+||
+"Not shipped yet"
+}
+
+</p>
 
 
 </div>
@@ -413,21 +592,187 @@ View Product →
 
 
 
-</div>
+<div>
+
+<p className="
+text-gray-500
+">
+
+Delivered
+
+</p>
 
 
-))}
+<p className="
+font-bold
+">
 
-
-
-</div>
-
-
-
-)
-
+{
+order.delivered
+?
+"Yes ✅"
+:
+"No"
 
 }
+
+</p>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+</section>
+
+
+
+
+
+
+
+
+
+{/* SELLER */}
+
+
+
+<section className="
+mt-8
+rounded-3xl
+bg-white
+p-8
+">
+
+
+<h2 className="
+text-2xl
+font-black
+">
+
+Seller
+
+</h2>
+
+
+
+<div className="
+mt-5
+flex
+items-center
+gap-4
+">
+
+
+{
+
+order.seller?.avatar &&
+
+<Image
+
+src={order.seller.avatar}
+
+width={60}
+
+height={60}
+
+alt="Seller"
+
+className="
+rounded-full
+"
+
+/>
+
+}
+
+
+
+
+<div>
+
+<h3 className="
+font-black
+text-xl
+">
+
+{order.seller?.username}
+
+</h3>
+
+
+{
+
+order.seller?.verified &&
+
+<p className="
+text-green-600
+font-bold
+">
+
+✓ Verified Seller
+
+</p>
+
+}
+
+
+</div>
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+<section className="
+mt-8
+rounded-3xl
+bg-black
+p-8
+text-white
+text-center
+">
+
+
+<h2 className="
+text-3xl
+font-black
+">
+
+🛡️ Halo Buyer Protection
+
+</h2>
+
+
+<p className="
+mt-3
+text-gray-300
+">
+
+Your payment is protected until your order is completed.
+
+</p>
+
+
+</section>
+
+
+
+
 
 
 
@@ -437,6 +782,5 @@ View Product →
 </main>
 
 );
-
 
 }
