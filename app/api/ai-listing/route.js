@@ -1,29 +1,92 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+
+
+function createSlug(text){
+
+return text
+.toLowerCase()
+.replace(/[^a-z0-9]+/g,"-")
+.replace(/(^-|-$)/g,"");
+
+}
+
+
+
 
 
 export async function POST(request){
 
 
-try {
+try{
 
 
-const body = await request.json();
+const supabase =
+await createClient();
 
+
+
+// USER CHECK
 
 
 const {
-product,
-condition,
-details,
-image
+data:{
+user
+}
 
-} = body;
+}=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+return NextResponse.json(
+
+{
+error:"Login required"
+},
+
+{
+status:401
+}
+
+);
+
+}
+
+
+
+
+
+
+const formData =
+await request.formData();
+
+
+
+const product =
+formData.get("product")?.toString();
+
+
+const condition =
+formData.get("condition")?.toString();
+
+
+const details =
+formData.get("details")?.toString();
+
+
+const image =
+formData.get("image")?.toString();
+
 
 
 
 
 
 if(!product){
+
 
 return NextResponse.json(
 
@@ -45,11 +108,13 @@ status:400
 
 
 
+
+// AI PROMPT
+
+
 const prompt = `
 
-You are Halo Marketplace AI.
-
-Create a professional marketplace listing.
+Create a marketplace listing.
 
 Product:
 ${product}
@@ -57,18 +122,20 @@ ${product}
 Condition:
 ${condition}
 
-Details:
+Extra details:
 ${details}
 
 
-Return ONLY valid JSON:
+Return ONLY valid JSON.
+
+Format:
 
 {
 "title":"",
 "description":"",
 "category":"",
-"suggested_price":"",
-"keywords":[]
+"price":0,
+"tags":[]
 }
 
 `;
@@ -78,59 +145,49 @@ Return ONLY valid JSON:
 
 
 
+const ai = await fetch(
 
-// AI connection placeholder
-// Replace with your AI provider
+"https://api.groq.com/openai/v1/chat/completions",
 
-
-const response = await fetch(
-"https://api.openai.com/v1/chat/completions",
 {
 
 method:"POST",
 
 headers:{
 
-"Content-Type":"application/json",
+Authorization:
+`Bearer ${process.env.GROQ_API_KEY}`,
 
-"Authorization":
-`Bearer ${process.env.OPENAI_API_KEY}`
+"Content-Type":
+"application/json"
 
 },
 
 
 body:JSON.stringify({
 
-model:"gpt-4.1-mini",
+model:
+"llama-3.1-70b-versatile",
 
 messages:[
 
 {
-
 role:"system",
-
 content:
-"You create marketplace listings."
-
+"You are Halo AI, an expert marketplace copywriter."
 },
 
 {
-
 role:"user",
-
 content:prompt
-
 }
 
 ],
 
-
-temperature:0.7
-
+temperature:0.5
 
 })
 
-
 }
 
 );
@@ -140,35 +197,42 @@ temperature:0.7
 
 
 
-
-
-const data =
-await response.json();
-
+const result =
+await ai.json();
 
 
 
 
 
+let content =
+result?.choices?.[0]?.message?.content;
 
-if(!data.choices){
 
 
-return NextResponse.json(
 
-{
-error:"AI generation failed"
-},
 
-{
-status:500
-}
+if(!content){
 
+
+throw new Error(
+"AI returned empty response"
 );
 
-
 }
 
+
+
+
+
+
+// Remove markdown JSON wrappers
+
+
+content =
+content
+.replace(/```json/g,"")
+.replace(/```/g,"")
+.trim();
 
 
 
@@ -177,36 +241,132 @@ status:500
 let listing;
 
 
+
 try{
 
 
 listing =
-JSON.parse(
-data.choices[0]
-.message
-.content
-);
+JSON.parse(content);
 
 
-}
 
-catch{
+}catch{
 
 
 listing={
 
 title:product,
 
-description:details,
+description:details || "",
 
-category:"General",
+category:"Other",
 
-suggested_price:"",
+price:0,
 
-keywords:[]
+tags:[]
 
 };
 
+
+}
+
+
+
+
+
+
+
+// CREATE PRODUCT DRAFT
+
+
+const slug =
+createSlug(
+listing.title
+);
+
+
+
+
+
+const {
+data:newProduct,
+error
+}=await supabase
+
+.from("products")
+
+.insert({
+
+title:
+listing.title,
+
+description:
+listing.description,
+
+
+category:
+listing.category,
+
+
+price:
+Number(listing.price) || 0,
+
+
+image:
+image || null,
+
+
+slug,
+
+
+tags:
+listing.tags,
+
+
+ai_generated:true,
+
+
+status:
+"draft",
+
+
+seller_id:
+user.id
+
+
+})
+
+.select()
+
+.single();
+
+
+
+
+
+
+
+if(error){
+
+
+console.error(
+"Product save error:",
+error
+);
+
+
+
+return NextResponse.json(
+
+{
+error:error.message
+},
+
+{
+status:500
+}
+
+);
 
 }
 
@@ -220,12 +380,12 @@ return NextResponse.json({
 
 success:true,
 
-listing,
+product:newProduct,
 
-image:image || null
+message:
+"AI listing created successfully"
 
 });
-
 
 
 
@@ -245,7 +405,7 @@ error
 return NextResponse.json(
 
 {
-error:"Server error"
+error:"AI listing generation failed"
 },
 
 {
