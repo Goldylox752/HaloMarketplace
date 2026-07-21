@@ -12,177 +12,316 @@ const stripe = new Stripe(
 export async function POST(request) {
 
 
-const body = await request.text();
+  const body = await request.text();
 
 
-const signature =
-request.headers.get(
-"stripe-signature"
-);
+  const signature =
+    request.headers.get(
+      "stripe-signature"
+    );
 
 
 
-let event;
+  let event;
 
 
 
-try {
+  try {
 
 
-event = stripe.webhooks.constructEvent(
+    event =
+      stripe.webhooks.constructEvent(
 
-body,
+        body,
 
-signature,
+        signature,
 
-process.env.STRIPE_WEBHOOK_SECRET
+        process.env.STRIPE_WEBHOOK_SECRET
 
-);
+      );
 
 
-} catch(error){
+  } catch(error){
 
 
-console.error(
-"Webhook verification failed:",
-error.message
-);
+    console.error(
+      "Stripe webhook verification failed:",
+      error.message
+    );
 
 
-return new NextResponse(
-"Webhook Error",
-{
-status:400
-}
-);
+    return new NextResponse(
+      "Webhook Error",
+      {
+        status:400
+      }
+    );
 
+  }
 
-}
 
 
 
 
 
-if(event.type === "checkout.session.completed"){
+  const supabase =
+    await createClient();
 
 
 
-const session = event.data.object;
 
 
+  if(
+    event.type ===
+    "checkout.session.completed"
+  ){
 
-const productId =
-session.metadata.productId;
 
 
+    const session =
+      event.data.object;
 
-const sellerId =
-session.metadata.sellerId;
 
 
 
-const amount =
-session.amount_total / 100;
 
+    const productId =
+      session.metadata?.productId;
 
 
 
-const supabase = await createClient();
+    const sellerId =
+      session.metadata?.sellerId;
 
 
 
-// Get customer
+    const buyerId =
+      session.metadata?.buyerId;
 
-const customerEmail =
-session.customer_details?.email;
 
 
 
+    const amount =
+      session.amount_total / 100;
 
-// Find buyer
 
-const {data:buyer} = await supabase
 
-.from("profiles")
 
-.select("id")
 
-.eq(
-"email",
-customerEmail
-)
+    if(
+      !productId ||
+      !sellerId
+    ){
 
-.single();
+      return NextResponse.json({
 
+        error:"Missing metadata"
 
+      },
+      {
+        status:400
+      });
 
+    }
 
 
-// Create order
 
 
-await supabase
 
-.from("orders")
 
-.insert({
 
-buyer_id:
-buyer?.id || null,
+    // Prevent duplicate orders
 
+    const {
+      data:existingOrder
+    } = await supabase
 
-seller_id:
-sellerId,
+    .from("orders")
 
+    .select("id")
 
-product_id:
-productId,
+    .eq(
+      "payment_id",
+      session.id
+    )
 
+    .maybeSingle();
 
-amount,
 
 
-status:"paid"
 
 
-});
 
+    if(existingOrder){
 
 
+      return NextResponse.json({
 
+        received:true
 
+      });
 
-// Mark product sold
 
+    }
 
-await supabase
 
-.from("products")
 
-.update({
 
-status:"sold"
 
-})
 
-.eq(
-"id",
-productId
-);
 
 
+    // Marketplace fee 8%
 
-}
+    const platformFee =
+      Number(
+        (amount * 0.08)
+        .toFixed(2)
+      );
 
 
 
+    const sellerAmount =
+      amount - platformFee;
 
 
-return NextResponse.json({
 
-received:true
 
-});
+
+
+
+
+
+    // Create order
+
+    const {
+      error:orderError
+    } = await supabase
+
+    .from("orders")
+
+    .insert({
+
+
+      buyer_id:
+        buyerId || null,
+
+
+      seller_id:
+        sellerId,
+
+
+      product_id:
+        productId,
+
+
+      amount,
+
+
+      platform_fee:
+        platformFee,
+
+
+      seller_amount:
+        sellerAmount,
+
+
+      payment_status:
+        "paid",
+
+
+      status:
+        "processing",
+
+
+      payment_id:
+        session.id
+
+
+    });
+
+
+
+
+
+
+    if(orderError){
+
+
+      console.error(
+        "Order creation failed:",
+        orderError
+      );
+
+
+    }
+
+
+
+
+
+
+
+
+    // Lock product
+
+    await supabase
+
+    .from("products")
+
+    .update({
+
+      status:"sold"
+
+    })
+
+    .eq(
+      "id",
+      productId
+    );
+
+
+
+
+
+
+
+  }
+
+
+
+
+
+  if(
+    event.type ===
+    "checkout.session.expired"
+  ){
+
+
+
+    const session =
+      event.data.object;
+
+
+
+    console.log(
+      "Expired checkout:",
+      session.id
+    );
+
+
+  }
+
+
+
+
+
+
+  return NextResponse.json({
+
+    received:true
+
+  });
 
 
 }
