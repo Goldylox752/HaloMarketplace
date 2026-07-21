@@ -25,8 +25,11 @@ async function getProducts(){
 
 
   if(error){
+
     console.log(error);
+
     return [];
+
   }
 
 
@@ -37,14 +40,16 @@ async function getProducts(){
 
 
 
+
 export const metadata = {
 
 title:"Browse Listings | Halo Marketplace",
 
 description:
-"Browse products for sale on Halo Marketplace."
+"Find products and deals from local sellers on Halo Marketplace."
 
 };
+
 
 
 
@@ -61,26 +66,53 @@ return (
 <main className="min-h-screen bg-gray-50">
 
 
-{/* HEADER */}
 
-<section className="bg-black text-white py-14 px-6">
+{/* HERO */}
+
+<section className="bg-black text-white py-16 px-6">
 
 
-<div className="max-w-6xl mx-auto">
+<div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-8">
 
+
+<div>
 
 <h1 className="text-5xl font-bold">
-
-Browse Marketplace
-
+Browse Halo Marketplace
 </h1>
 
 
-<p className="mt-4 text-gray-300">
+<p className="mt-4 text-gray-300 text-lg">
 
-Find products from sellers near you.
+Discover great deals from sellers near you.
 
 </p>
+
+
+</div>
+
+
+
+<Link
+
+href="/sell"
+
+className="
+bg-white
+text-black
+px-6
+py-3
+rounded-xl
+font-semibold
+h-fit
+"
+
+>
+
+Sell Something
+
+</Link>
+
 
 
 </div>
@@ -92,14 +124,10 @@ Find products from sellers near you.
 
 
 
-{/* SEARCH + FILTER */}
 
-<section className="
-max-w-6xl
-mx-auto
-px-6
-py-10
-">
+{/* SEARCH */}
+
+<section className="max-w-6xl mx-auto px-6 py-10">
 
 
 <div className="
@@ -115,7 +143,7 @@ gap-4
 
 <input
 
-placeholder="Search listings..."
+placeholder="Search products..."
 
 className="
 border
@@ -128,16 +156,13 @@ py-3
 
 
 
-<select
-
-className="
+<select className="
 border
 rounded-xl
 px-5
 py-3
-"
+">
 
->
 
 <option>
 All Categories
@@ -163,24 +188,22 @@ Gaming
 Other
 </option>
 
+
 </select>
 
 
 
 
-<select
-
-className="
+<select className="
 border
 rounded-xl
 px-5
 py-3
-"
+">
 
->
 
 <option>
-Any Location
+All Locations
 </option>
 
 <option>
@@ -210,7 +233,8 @@ British Columbia
 
 
 
-{/* LISTINGS */}
+
+{/* RESULTS */}
 
 <section className="
 max-w-6xl
@@ -218,6 +242,31 @@ mx-auto
 px-6
 pb-20
 ">
+
+
+<div className="
+flex
+justify-between
+items-center
+mb-8
+">
+
+
+<h2 className="text-3xl font-bold">
+
+Latest Listings ({products.length})
+
+</h2>
+
+
+</div>
+
+
+
+
+
+{
+products.length > 0 ? (
 
 
 <div className="
@@ -229,7 +278,8 @@ gap-6
 ">
 
 
-{products.map((product)=>(
+{
+products.map((product)=>(
 
 
 <Link
@@ -269,6 +319,8 @@ alt={product.title}
 
 fill
 
+sizes="(max-width:768px)100vw,25vw"
+
 className="object-cover"
 
 />
@@ -276,17 +328,19 @@ className="object-cover"
 
 ):(
 
+
 <div className="
-h-full
 flex
 items-center
 justify-center
+h-full
 text-gray-400
 ">
 
 No Image
 
 </div>
+
 
 )
 
@@ -299,18 +353,42 @@ No Image
 
 
 
+
 <div className="p-5">
 
 
-<h2 className="
+<h3 className="
 font-bold
 text-lg
-line-clamp-1
+truncate
 ">
 
 {product.title}
 
-</h2>
+</h3>
+
+
+
+<div className="
+flex
+justify-between
+mt-3
+">
+
+
+<p className="
+font-bold
+text-xl
+">
+
+${Number(product.price).toLocaleString()}
+
+</p>
+
+
+
+</div>
+
 
 
 
@@ -320,23 +398,9 @@ text-sm
 mt-2
 ">
 
-{product.location}
+📍 {product.location}
 
 </p>
-
-
-
-
-<p className="
-font-bold
-text-xl
-mt-4
-">
-
-${product.price}
-
-</p>
-
 
 
 
@@ -345,11 +409,11 @@ product.category && (
 
 <span className="
 inline-block
-mt-3
+mt-4
 bg-gray-100
+rounded-full
 px-3
 py-1
-rounded-full
 text-sm
 ">
 
@@ -366,47 +430,79 @@ text-sm
 </div>
 
 
+</Link>
+
+
+))
+
+}
+
+
+</div>
+
+
+):(
+
+
+<div className="
+bg-white
+rounded-2xl
+p-12
+text-center
+">
+
+
+<h2 className="text-2xl font-bold">
+
+No listings yet
+
+</h2>
+
+
+<p className="text-gray-500 mt-3">
+
+Be the first person to sell something on Halo Marketplace.
+
+</p>
+
+
+
+<Link
+
+href="/sell"
+
+className="
+inline-block
+mt-6
+bg-black
+text-white
+px-6
+py-3
+rounded-xl
+"
+
+>
+
+Create Listing
 
 </Link>
 
 
-))}
-
-
 
 </div>
 
-
-
-{
-products.length === 0 && (
-
-<div className="
-text-center
-py-20
-text-gray-500
-">
-
-No listings found yet.
-
-</div>
 
 )
 
 }
 
 
-
 </section>
-
-
-
 
 
 
 </main>
 
 );
-
 
 }
