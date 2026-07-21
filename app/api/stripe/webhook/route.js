@@ -3,28 +3,22 @@ import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 
 
-
 const stripe = new Stripe(
-
-process.env.STRIPE_SECRET_KEY
-
+  process.env.STRIPE_SECRET_KEY
 );
 
 
 
-export async function POST(request){
-
+export async function POST(request) {
 
 
 const body = await request.text();
 
 
-const signature = request.headers.get(
-
+const signature =
+request.headers.get(
 "stripe-signature"
-
 );
-
 
 
 
@@ -32,8 +26,7 @@ let event;
 
 
 
-
-try{
+try {
 
 
 event = stripe.webhooks.constructEvent(
@@ -47,40 +40,24 @@ process.env.STRIPE_WEBHOOK_SECRET
 );
 
 
-
-}
-
-catch(error){
+} catch(error){
 
 
-
-console.log(
-
-"Stripe webhook error:",
-
+console.error(
+"Webhook verification failed:",
 error.message
-
 );
-
 
 
 return new NextResponse(
-
 "Webhook Error",
-
 {
-
 status:400
-
 }
-
 );
 
 
-
 }
-
-
 
 
 
@@ -94,13 +71,18 @@ const session = event.data.object;
 
 
 
+const productId =
+session.metadata.productId;
 
-const productId = session.metadata.product_id;
 
-const buyerId = session.metadata.buyer_id;
 
-const sellerId = session.metadata.seller_id;
+const sellerId =
+session.metadata.sellerId;
 
+
+
+const amount =
+session.amount_total / 100;
 
 
 
@@ -109,33 +91,28 @@ const supabase = await createClient();
 
 
 
+// Get customer
+
+const customerEmail =
+session.customer_details?.email;
 
 
 
-// Get product details
 
+// Find buyer
 
-const {
+const {data:buyer} = await supabase
 
-data:product
+.from("profiles")
 
-}=await supabase
+.select("id")
 
-.from("products")
-
-.select("*")
-
-.eq("id",productId)
+.eq(
+"email",
+customerEmail
+)
 
 .single();
-
-
-
-
-
-
-
-if(product){
 
 
 
@@ -150,19 +127,25 @@ await supabase
 
 .insert({
 
-buyer_id:buyerId,
+buyer_id:
+buyer?.id || null,
 
-seller_id:sellerId,
 
-product_id:productId,
+seller_id:
+sellerId,
 
-amount:product.price,
+
+product_id:
+productId,
+
+
+amount,
+
 
 status:"paid"
 
+
 });
-
-
 
 
 
@@ -183,21 +166,9 @@ status:"sold"
 })
 
 .eq(
-
 "id",
-
 productId
-
 );
-
-
-
-
-
-}
-
-
-
 
 
 
