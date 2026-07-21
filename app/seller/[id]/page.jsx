@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+
+import { createClient } from "@/lib/supabase/server";
 
 
 
 async function getSeller(id){
-
 
 const supabase = await createClient();
 
@@ -15,8 +15,7 @@ const supabase = await createClient();
 const {
 data:profile,
 error
-
-}= await supabase
+}=await supabase
 
 .from("profiles")
 
@@ -27,7 +26,8 @@ avatar,
 location,
 rating,
 review_count,
-verified
+verified,
+created_at
 `)
 
 .eq(
@@ -36,8 +36,6 @@ id
 )
 
 .single();
-
-
 
 
 
@@ -53,8 +51,7 @@ return null;
 
 const {
 data:products
-
-}= await supabase
+}=await supabase
 
 .from("products")
 
@@ -64,7 +61,8 @@ title,
 price,
 image,
 slug,
-category
+category,
+created_at
 `)
 
 .eq(
@@ -87,12 +85,11 @@ ascending:false
 
 
 
-
 return {
 
 profile,
 
-products: products || []
+products:products || []
 
 };
 
@@ -105,13 +102,31 @@ products: products || []
 
 
 
+function formatPrice(price){
+
+return new Intl.NumberFormat(
+"en-CA",
+{
+style:"currency",
+currency:"CAD"
+}
+).format(price || 0);
+
+}
+
+
+
+
+
+
+
 export async function generateMetadata({params}){
 
 
-const {id}= await params;
+const {id}=await params;
 
 
-const seller = await getSeller(id);
+const seller=await getSeller(id);
 
 
 
@@ -120,7 +135,12 @@ return {
 title:
 seller
 ? `${seller.profile.username} | Halo Marketplace`
-:"Seller Not Found"
+:"Seller Not Found",
+
+description:
+seller
+? `Shop products from ${seller.profile.username} on Halo Marketplace.`
+:"Seller profile not found."
 
 };
 
@@ -136,12 +156,10 @@ seller
 export default async function SellerPage({params}){
 
 
-const {id}= await params;
+const {id}=await params;
 
 
-const seller = await getSeller(id);
-
-
+const seller=await getSeller(id);
 
 
 
@@ -150,6 +168,17 @@ if(!seller){
 notFound();
 
 }
+
+
+
+const {
+
+profile,
+
+products
+
+}=seller;
+
 
 
 
@@ -166,15 +195,17 @@ py-16
 
 
 <div className="
-mx-auto
 max-w-6xl
+mx-auto
 ">
 
 
 
 
 
-{/* PROFILE */}
+
+
+{/* SELLER PROFILE */}
 
 
 
@@ -182,7 +213,17 @@ max-w-6xl
 rounded-3xl
 bg-white
 p-10
-shadow
+shadow-sm
+">
+
+
+<div className="
+flex
+flex-col
+md:flex-row
+md:items-center
+justify-between
+gap-6
 ">
 
 
@@ -193,18 +234,20 @@ gap-6
 ">
 
 
+
 {
-seller.profile.avatar ? (
+
+profile.avatar ? (
 
 <Image
 
-src={seller.profile.avatar}
+src={profile.avatar}
 
-width={90}
+width={100}
 
-height={90}
+height={100}
 
-alt="Seller"
+alt={profile.username || "Seller"}
 
 className="
 rounded-full
@@ -215,6 +258,7 @@ rounded-full
 
 ):(
 
+
 <div className="
 flex
 h-24
@@ -223,16 +267,18 @@ items-center
 justify-center
 rounded-full
 bg-gray-200
-text-4xl
+text-5xl
 ">
 
 👤
 
 </div>
 
+
 )
 
 }
+
 
 
 
@@ -246,7 +292,7 @@ text-4xl
 font-black
 ">
 
-{seller.profile.username || "Halo Seller"}
+{profile.username || "Halo Seller"}
 
 </h1>
 
@@ -257,9 +303,10 @@ mt-2
 text-gray-600
 ">
 
-📍 {seller.profile.location || "Canada"}
+📍 {profile.location || "Canada"}
 
 </p>
+
 
 
 
@@ -268,9 +315,9 @@ mt-2
 font-bold
 ">
 
-⭐ {seller.profile.rating || "5.0"}
+⭐ {profile.rating || "5.0"}
 
-({seller.profile.review_count || 0} reviews)
+({profile.review_count || 0} reviews)
 
 </p>
 
@@ -280,23 +327,31 @@ font-bold
 
 
 
+</div>
+
+
+
+
+
 
 
 {
-seller.profile.verified && (
 
-<span className="
+profile.verified && (
+
+<div className="
 rounded-full
 bg-green-100
-px-4
+px-5
 py-2
 font-bold
 text-green-700
 ">
 
-✓ Verified
+✓ Verified Seller
 
-</span>
+</div>
+
 
 )
 
@@ -307,6 +362,115 @@ text-green-700
 </div>
 
 
+
+
+
+<div className="
+mt-8
+grid
+grid-cols-2
+md:grid-cols-3
+gap-4
+">
+
+
+
+<div className="
+rounded-2xl
+bg-gray-100
+p-5
+">
+
+<p className="text-gray-500">
+
+Listings
+
+</p>
+
+
+<h3 className="
+text-3xl
+font-black
+">
+
+{products.length}
+
+</h3>
+
+
+</div>
+
+
+
+
+
+<div className="
+rounded-2xl
+bg-gray-100
+p-5
+">
+
+<p className="text-gray-500">
+
+Rating
+
+</p>
+
+
+<h3 className="
+text-3xl
+font-black
+">
+
+⭐ {profile.rating || "5.0"}
+
+</h3>
+
+
+</div>
+
+
+
+
+
+<div className="
+rounded-2xl
+bg-gray-100
+p-5
+">
+
+<p className="text-gray-500">
+
+Member Since
+
+</p>
+
+
+<h3 className="
+text-lg
+font-black
+">
+
+{profile.created_at
+?
+new Date(profile.created_at)
+.getFullYear()
+:
+"2026"
+}
+
+</h3>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
 </section>
 
 
@@ -315,17 +479,58 @@ text-green-700
 
 
 
-{/* PRODUCTS */}
+
+{/* CONTACT */}
+
+
+
+<Link
+
+href={`/messages?seller=${profile.id}`}
+
+className="
+mt-8
+block
+rounded-xl
+bg-black
+py-4
+text-center
+font-bold
+text-white
+"
+
+>
+
+💬 Contact Seller
+
+</Link>
+
+
+
+
+
+
+
+
+
+{/* LISTINGS */}
 
 
 
 <section className="
-mt-12
+mt-16
+">
+
+
+<div className="
+flex
+justify-between
+items-center
+mb-8
 ">
 
 
 <h2 className="
-mb-8
 text-3xl
 font-black
 ">
@@ -335,6 +540,50 @@ Seller Listings
 </h2>
 
 
+</div>
+
+
+
+
+
+
+{
+products.length === 0 ? (
+
+
+<div className="
+rounded-3xl
+bg-white
+p-12
+text-center
+">
+
+
+<h3 className="
+text-2xl
+font-bold
+">
+
+No Active Listings
+
+</h3>
+
+
+<p className="
+mt-3
+text-gray-500
+">
+
+This seller has no products available.
+
+</p>
+
+
+</div>
+
+
+
+):(
 
 
 
@@ -349,7 +598,7 @@ lg:grid-cols-4
 
 {
 
-seller.products.map(product=>(
+products.map(product=>(
 
 
 <Link
@@ -362,7 +611,8 @@ className="
 overflow-hidden
 rounded-2xl
 bg-white
-shadow
+shadow-sm
+transition
 hover:shadow-xl
 "
 
@@ -378,6 +628,7 @@ bg-gray-100
 
 
 {
+
 product.image ? (
 
 <Image
@@ -388,7 +639,9 @@ alt={product.title}
 
 fill
 
-className="object-cover"
+className="
+object-cover
+"
 
 />
 
@@ -401,6 +654,7 @@ flex
 h-full
 items-center
 justify-center
+text-5xl
 ">
 
 📦
@@ -413,8 +667,8 @@ justify-center
 }
 
 
-
 </div>
+
 
 
 
@@ -425,8 +679,8 @@ justify-center
 
 
 <h3 className="
-font-bold
 truncate
+font-bold
 ">
 
 {product.title}
@@ -439,9 +693,22 @@ truncate
 mt-3
 text-xl
 font-black
+text-indigo-600
 ">
 
-${product.price}
+{formatPrice(product.price)}
+
+</p>
+
+
+
+<p className="
+mt-2
+text-sm
+text-gray-500
+">
+
+🏷️ {product.category || "General"}
 
 </p>
 
@@ -465,16 +732,25 @@ ${product.price}
 
 
 
+)
+
+}
+
+
+
 </section>
+
+
+
 
 
 
 
 </div>
 
-
 </main>
 
 );
+
 
 }
