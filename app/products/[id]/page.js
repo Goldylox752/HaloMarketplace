@@ -7,14 +7,19 @@ import { createClient } from "@/lib/supabase/server";
 import FavoriteButton from "@/components/FavoriteButton";
 import CheckoutButton from "@/components/CheckoutButton";
 
-async function getProduct(id) {
+
+async function getProduct(slug){
+
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+
+  const {data,error} = await supabase
+
     .from("products")
+
     .select(`
       *,
-      profiles:seller_id (
+      profiles:seller_id(
         username,
         avatar,
         location,
@@ -23,173 +28,369 @@ async function getProduct(id) {
         verified
       )
     `)
-    .eq("id", id)
+
+    .eq("slug",slug)
+
     .single();
 
-  if (error || !data) {
+
+
+  if(error || !data){
+
     return null;
+
   }
+
 
   return data;
+
 }
 
-function formatPrice(price) {
-  return new Intl.NumberFormat("en-CA", {
-    style: "currency",
-    currency: "CAD",
-    maximumFractionDigits: 0,
-  }).format(price || 0);
+
+
+
+export async function generateMetadata({params}){
+
+const product = await getProduct(params.slug);
+
+
+if(!product){
+
+return {
+
+title:"Product Not Found"
+
+};
+
 }
 
-function formatDate(date) {
-  if (!date) return "";
 
-  return new Date(date).toLocaleDateString("en-CA", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+
+return {
+
+title:`${product.title} | Halo Market`,
+
+description:
+product.description ||
+`Buy ${product.title} on Halo Market`
+
+};
+
+
 }
 
-export default async function ProductPage({ params }) {
-  const { id } = await params;
 
-  const product = await getProduct(id);
 
-  if (!product) {
-    notFound();
-  }
 
-  return (
-    <main className="min-h-screen bg-gray-50 py-16 px-6">
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12">
 
-        {/* Image */}
+function formatPrice(price){
 
-        <div className="bg-white rounded-3xl shadow overflow-hidden">
+return new Intl.NumberFormat(
+"en-CA",
+{
+style:"currency",
+currency:"CAD"
+}
+).format(price || 0);
 
-          {product.image ? (
-            <Image
-              src={product.image}
-              alt={product.title}
-              width={900}
-              height={900}
-              priority
-              className="w-full h-[600px] object-cover"
-            />
-          ) : (
-            <div className="h-[600px] flex items-center justify-center bg-gray-100 text-8xl">
-              📦
-            </div>
-          )}
+}
 
-        </div>
 
-        {/* Details */}
 
-        <div className="bg-white rounded-3xl shadow p-10">
 
-          <span className="inline-block bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold">
-            {product.category || "General"}
-          </span>
 
-          <h1 className="text-5xl font-black mt-5">
-            {product.title}
-          </h1>
+export default async function ProductPage({params}){
 
-          <p className="text-4xl font-black text-indigo-600 mt-6">
-            {formatPrice(product.price)}
-          </p>
 
-          <div className="flex flex-wrap gap-6 mt-6 text-gray-500">
+const {slug} = await params;
 
-            <span>
-              📍 {product.location || "Canada"}
-            </span>
 
-            <span>
-              📦 {product.condition || "Used"}
-            </span>
+const product = await getProduct(slug);
 
-            {product.created_at && (
-              <span>
-                🗓 Posted {formatDate(product.created_at)}
-              </span>
-            )}
 
-          </div>
 
-          <div className="mt-8">
-            <h2 className="text-xl font-bold">
-              Description
-            </h2>
+if(!product){
 
-            <p className="mt-4 text-gray-600 leading-7">
-              {product.description || "No description provided."}
-            </p>
-          </div>
+notFound();
 
-          {/* Seller */}
+}
 
-          <div className="mt-10 border rounded-2xl p-6">
 
-            <div className="flex items-center justify-between">
 
-              <h2 className="text-xl font-bold">
-                Seller
-              </h2>
+return (
 
-              {product.profiles?.verified && (
-                <span className="bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full font-semibold">
-                  ✓ Verified
-                </span>
-              )}
+<main className="min-h-screen bg-gray-50 px-6 py-16">
 
-            </div>
 
-            <div className="mt-5">
+<div className="mx-auto max-w-7xl">
 
-              <p className="text-lg font-semibold">
-                {product.profiles?.username || "Halo Seller"}
-              </p>
 
-              <p className="text-gray-500 mt-1">
-                📍 {product.profiles?.location || product.location || "Canada"}
-              </p>
+<Link
 
-              <p className="mt-2">
-                ⭐ {product.profiles?.rating ?? "5.0"}{" "}
-                ({product.profiles?.review_count ?? 0} reviews)
-              </p>
+href="/products"
 
-            </div>
+className="font-semibold text-indigo-600"
 
-          </div>
+>
 
-          {/* Actions */}
+← Back to Marketplace
 
-          <div className="mt-10 space-y-4">
+</Link>
 
-            <CheckoutButton
-              productId={product.id}
-            />
 
-            <FavoriteButton
-              productId={product.id}
-            />
 
-            <Link
-              href={`/messages?seller=${product.seller_id}&product=${product.id}`}
-              className="block w-full text-center border rounded-xl py-4 font-bold hover:bg-gray-100 transition"
-            >
-              💬 Message Seller
-            </Link>
+<div className="mt-8 grid gap-12 lg:grid-cols-2">
 
-          </div>
 
-        </div>
 
-      </div>
-    </main>
-  );
+{/* IMAGE */}
+
+
+<div className="overflow-hidden rounded-3xl bg-white shadow">
+
+
+{product.image ? (
+
+<Image
+
+src={product.image}
+
+alt={product.title}
+
+width={900}
+
+height={900}
+
+priority
+
+className="h-[600px] w-full object-cover"
+
+/>
+
+
+):(
+
+
+<div className="flex h-[600px] items-center justify-center text-8xl">
+
+📦
+
+</div>
+
+
+)}
+
+
+</div>
+
+
+
+
+
+
+
+{/* DETAILS */}
+
+
+<div className="rounded-3xl bg-white p-10 shadow">
+
+
+
+<span className="rounded-full bg-indigo-100 px-4 py-2 text-sm font-bold text-indigo-700">
+
+{product.category || "General"}
+
+</span>
+
+
+
+
+
+<h1 className="mt-6 text-5xl font-black">
+
+{product.title}
+
+</h1>
+
+
+
+<p className="mt-6 text-4xl font-black text-indigo-600">
+
+{formatPrice(product.price)}
+
+</p>
+
+
+
+
+
+<div className="mt-6 space-y-2 text-gray-600">
+
+
+<p>
+📍 {product.location || "Canada"}
+</p>
+
+
+<p>
+📦 {product.condition || "Used"}
+</p>
+
+
+</div>
+
+
+
+
+
+
+<section className="mt-10">
+
+
+<h2 className="text-xl font-black">
+
+Description
+
+</h2>
+
+
+<p className="mt-4 leading-7 text-gray-600">
+
+{product.description || 
+"No description available."}
+
+</p>
+
+
+</section>
+
+
+
+
+
+
+
+{/* SELLER */}
+
+
+<section className="mt-10 rounded-2xl border p-6">
+
+
+<div className="flex justify-between">
+
+
+<h2 className="text-xl font-black">
+
+Seller
+
+</h2>
+
+
+
+{product.profiles?.verified && (
+
+<span className="rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-700">
+
+✓ Verified
+
+</span>
+
+)}
+
+
+</div>
+
+
+
+
+
+<p className="mt-5 text-lg font-bold">
+
+{product.profiles?.username || "Halo Seller"}
+
+</p>
+
+
+
+<p className="mt-2 text-gray-500">
+
+📍 {product.profiles?.location || "Canada"}
+
+</p>
+
+
+
+<p className="mt-2">
+
+⭐ {product.profiles?.rating || "5.0"}
+
+({product.profiles?.review_count || 0} reviews)
+
+</p>
+
+
+</section>
+
+
+
+
+
+
+
+{/* ACTIONS */}
+
+
+<div className="mt-10 space-y-4">
+
+
+<CheckoutButton
+
+productId={product.id}
+
+/>
+
+
+
+<FavoriteButton
+
+productId={product.id}
+
+/>
+
+
+
+<Link
+
+href={`/messages?seller=${product.seller_id}&product=${product.id}`}
+
+className="block rounded-xl border py-4 text-center font-bold hover:bg-gray-100"
+
+>
+
+💬 Message Seller
+
+</Link>
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+</main>
+
+);
+
+
 }
