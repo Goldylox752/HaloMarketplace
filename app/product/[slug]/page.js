@@ -1,193 +1,1074 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import SubmitButton from "@/components/SubmitButton";
 import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-async function getProduct(slug: string, userId: string) {
+
+
+async function getProduct(slug){
+
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("slug", slug)
-    .single();
 
-  if (error || !data) return null;
-  // Ensure the user owns this product
-  if (data.user_id !== userId) return null;
-  return data;
-}
+  const {data,error} = await supabase
 
-export default async function EditProductPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams?: { error?: string };
-}) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  .from("products")
 
-  if (!user) redirect("/login");
+  .select(`
+    id,
+    title,
+    price,
+    image,
+    description,
+    location,
+    category,
+    created_at,
+    seller_id,
+    profiles(
+      id,
+      username,
+      avatar,
+      bio,
+      location,
+      verified,
+      seller_rating,
+      sales_count
+    )
+  `)
 
-  const product = await getProduct(params.slug, user.id);
-  if (!product) notFound();
+  .eq(
+    "slug",
+    slug
+  )
 
-  async function updateProduct(formData: FormData) {
-    "use server";
+  .single();
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
 
-    const title = formData.get("title")?.toString().trim();
-    const description = formData.get("description")?.toString().trim();
-    const price = Number(formData.get("price"));
-    const location = formData.get("location")?.toString().trim();
-    const category = formData.get("category")?.toString();
-    const condition = formData.get("condition")?.toString();
-    const slug = formData.get("slug")?.toString();
 
-    if (!title || !price || !category) {
-      redirect(`/product/edit/${slug}?error=Required fields missing.`);
-    }
+  if(error || !data){
 
-    const { error } = await supabase
-      .from("products")
-      .update({
-        title,
-        description,
-        price,
-        location,
-        category,
-        condition,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("slug", slug)
-      .eq("user_id", user.id);
+    return null;
 
-    if (error) {
-      console.error(error);
-      redirect(`/product/edit/${slug}?error=Update failed.`);
-    }
-
-    redirect(`/product/${slug}`);
   }
 
-  const error = searchParams?.error;
 
-  return (
-    <main className="min-h-screen bg-gray-50 px-6 py-16">
-      <div className="mx-auto max-w-3xl">
-        <div className="rounded-3xl bg-white p-10 shadow">
-          <h1 className="text-3xl font-black">Edit Listing</h1>
-          <p className="mt-2 text-gray-600">Update your product details.</p>
 
-          {error && (
-            <div className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-200">
-              {error}
-            </div>
-          )}
+  return data;
 
-          <form action={updateProduct} className="mt-8 space-y-5">
-            <input type="hidden" name="slug" value={product.slug} />
+}
 
-            <div>
-              <label className="text-sm font-medium">Title *</label>
-              <input
-                name="title"
-                type="text"
-                required
-                defaultValue={product.title}
-                className="mt-1 w-full rounded-xl border p-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">Price (CAD) *</label>
-              <input
-                name="price"
-                type="number"
-                step="0.01"
-                required
-                defaultValue={product.price}
-                className="mt-1 w-full rounded-xl border p-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">Location</label>
-              <input
-                name="location"
-                type="text"
-                defaultValue={product.location || ""}
-                className="mt-1 w-full rounded-xl border p-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">Category *</label>
-              <select
-                name="category"
-                required
-                defaultValue={product.category}
-                className="mt-1 w-full rounded-xl border p-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-              >
-                <option value="">Select</option>
-                <option>Vehicles</option>
-                <option>Electronics</option>
-                <option>Computers</option>
-                <option>Home</option>
-                <option>Fashion</option>
-                <option>Gaming</option>
-                <option>Tools</option>
-                <option>Sports</option>
-                <option>Services</option>
-              </select>
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">Condition</label>
-              <select
-                name="condition"
-                defaultValue={product.condition || ""}
-                className="mt-1 w-full rounded-xl border p-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-              >
-                <option value="">Select</option>
-                <option>New</option>
-                <option>Like New</option>
-                <option>Used</option>
-                <option>Refurbished</option>
-              </select>
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">Description</label>
-              <textarea
-                name="description"
-                rows="5"
-                defaultValue={product.description || ""}
-                className="mt-1 w-full rounded-xl border p-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
-            </div>
 
-            <div className="flex gap-4">
-              <SubmitButton>Save Changes</SubmitButton>
-              <Link
-                href={`/product/${product.slug}`}
-                className="inline-flex items-center justify-center w-full rounded-xl border border-gray-300 px-6 py-4 font-bold hover:bg-gray-50 transition"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
-        </div>
-      </div>
-    </main>
+async function getSimilarProducts(category, productId){
+
+  const supabase = await createClient();
+
+
+  const {data,error} = await supabase
+
+  .from("products")
+
+  .select(`
+    id,
+    title,
+    price,
+    image,
+    slug,
+    location,
+    category
+  `)
+
+  .eq(
+    "category",
+    category
+  )
+
+  .neq(
+    "id",
+    productId
+  )
+
+  .limit(6);
+
+
+
+  if(error){
+
+    console.error(error);
+
+    return [];
+
+  }
+
+
+
+  return data || [];
+
+}
+
+
+
+
+
+
+
+function formatPrice(price){
+
+  return new Intl.NumberFormat(
+    "en-CA",
+    {
+      style:"currency",
+      currency:"CAD"
+    }
+  ).format(price || 0);
+
+}
+
+
+
+
+
+
+
+export async function generateMetadata({params}){
+
+
+  const product =
+  await getProduct(
+    params.slug
   );
+
+
+
+  if(!product){
+
+    return {
+
+      title:
+      "Halo Marketplace"
+
+    };
+
+  }
+
+
+
+
+  return {
+
+    title:
+    `${product.title} | Halo Marketplace`,
+
+
+    description:
+    product.description?.slice(0,160)
+
+  };
+
+
+}
+
+
+
+
+
+
+
+export default async function ProductPage({params}){
+
+
+  const product =
+  await getProduct(
+    params.slug
+  );
+
+
+
+  if(!product){
+
+    notFound();
+
+  }
+
+
+
+
+  const seller =
+  product.profiles;
+
+
+
+  const similarProducts =
+  await getSimilarProducts(
+    product.category,
+    product.id
+  );
+
+
+
+  const schema = {
+
+    "@context":"https://schema.org",
+
+    "@type":"Product",
+
+    "name":
+    product.title,
+
+
+    "description":
+    product.description,
+
+
+    "image":
+    product.image,
+
+
+    "offers":{
+
+      "@type":"Offer",
+
+      "priceCurrency":"CAD",
+
+      "price":
+      product.price,
+
+
+      "availability":
+      "https://schema.org/InStock"
+
+    },
+
+
+    "seller":{
+
+      "@type":"Person",
+
+      "name":
+      seller?.username || "Halo Seller"
+
+    }
+
+
+  };
+
+
+
+return (
+
+<main className="
+min-h-screen
+bg-gray-50
+px-6
+py-12
+">
+
+
+<script
+
+type="application/ld+json"
+
+dangerouslySetInnerHTML={{
+
+__html:
+JSON.stringify(schema)
+
+}}
+
+/>
+
+
+<div className="
+mx-auto
+grid
+max-w-7xl
+gap-10
+lg:grid-cols-3
+">
+{/* ================= PRODUCT SECTION ================= */}
+
+
+<section className="
+lg:col-span-2
+">
+
+
+<div className="
+relative
+h-[500px]
+overflow-hidden
+rounded-3xl
+bg-white
+">
+
+
+{product.image ? (
+
+<Image
+
+src={product.image}
+
+alt={product.title}
+
+fill
+
+className="
+object-cover
+"
+
+/>
+
+) : (
+
+<div className="
+flex
+h-full
+items-center
+justify-center
+text-7xl
+">
+
+📦
+
+</div>
+
+)}
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+mt-8
+rounded-3xl
+bg-white
+p-8
+">
+
+
+<div className="
+flex
+flex-wrap
+gap-3
+">
+
+
+<span className="
+rounded-full
+bg-gray-100
+px-4
+py-2
+text-sm
+font-bold
+">
+
+{product.category || "General"}
+
+</span>
+
+
+
+<span className="
+rounded-full
+bg-green-100
+px-4
+py-2
+text-sm
+font-bold
+text-green-700
+">
+
+Available
+
+</span>
+
+
+</div>
+
+
+
+
+
+
+<h1 className="
+mt-6
+text-4xl
+font-black
+md:text-5xl
+">
+
+{product.title}
+
+</h1>
+
+
+
+
+
+
+<p className="
+mt-5
+text-gray-600
+">
+
+📍 {product.location || "Canada"}
+
+</p>
+
+
+
+
+
+
+
+<p className="
+mt-8
+text-4xl
+font-black
+">
+
+{formatPrice(product.price)}
+
+</p>
+
+
+
+
+
+
+
+
+<div className="
+mt-8
+border-t
+pt-8
+">
+
+
+<h2 className="
+text-2xl
+font-black
+">
+
+Description
+
+</h2>
+
+
+
+<p className="
+mt-4
+leading-relaxed
+text-gray-700
+">
+
+{product.description || 
+"No description provided."}
+
+</p>
+
+
+</div>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+
+{/* ================= SELLER CARD ================= */}
+
+
+<aside className="
+h-fit
+rounded-3xl
+bg-white
+p-8
+shadow-sm
+">
+
+
+<h2 className="
+text-2xl
+font-black
+">
+
+Seller Information
+
+</h2>
+
+
+
+
+
+
+
+<div className="
+mt-6
+flex
+items-center
+gap-4
+">
+
+
+
+{seller?.avatar ? (
+
+
+<div className="
+relative
+h-16
+w-16
+overflow-hidden
+rounded-full
+">
+
+
+<Image
+
+src={seller.avatar}
+
+alt={seller.username || "Seller"}
+
+fill
+
+className="
+object-cover
+"
+
+/>
+
+
+</div>
+
+
+
+) : (
+
+
+<div className="
+flex
+h-16
+w-16
+items-center
+justify-center
+rounded-full
+bg-gray-200
+text-2xl
+">
+
+👤
+
+</div>
+
+
+)}
+
+
+
+
+
+
+<div>
+
+
+<h3 className="
+text-xl
+font-black
+">
+
+{seller?.username || "Halo Seller"}
+
+</h3>
+
+
+
+
+
+
+{seller?.verified ? (
+
+<span className="
+mt-2
+inline-block
+rounded-full
+bg-green-100
+px-3
+py-1
+text-xs
+font-bold
+text-green-700
+">
+
+✓ Verified Seller
+
+</span>
+
+
+) : (
+
+
+<span className="
+mt-2
+inline-block
+rounded-full
+bg-gray-100
+px-3
+py-1
+text-xs
+font-bold
+">
+
+New Seller
+
+</span>
+
+
+)}
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div className="
+mt-8
+grid
+grid-cols-2
+gap-4
+">
+
+
+<div className="
+rounded-2xl
+bg-gray-100
+p-4
+text-center
+">
+
+
+<p className="
+text-2xl
+font-black
+">
+
+⭐ {seller?.seller_rating || "New"}
+
+</p>
+
+
+<p className="
+text-sm
+text-gray-500
+">
+
+Rating
+
+</p>
+
+
+</div>
+
+
+
+
+
+<div className="
+rounded-2xl
+bg-gray-100
+p-4
+text-center
+">
+
+
+<p className="
+text-2xl
+font-black
+">
+
+{seller?.sales_count || 0}
+
+</p>
+
+
+<p className="
+text-sm
+text-gray-500
+">
+
+Sales
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+<p className="
+mt-6
+text-sm
+text-gray-600
+">
+
+📍 {seller?.location || product.location || "Canada"}
+
+</p>
+
+
+
+
+
+
+<div className="
+mt-8
+flex
+flex-col
+gap-3
+">
+
+
+<Link
+
+href={`/messages?seller=${seller?.id}`}
+
+className="
+rounded-xl
+bg-black
+px-6
+py-4
+text-center
+font-bold
+text-white
+"
+
+>
+
+💬 Message Seller
+
+</Link>
+
+
+
+
+
+<Link
+
+href={`/seller/${seller?.id}`}
+
+className="
+rounded-xl
+border
+px-6
+py-4
+text-center
+font-bold
+"
+
+>
+
+🏪 View Seller Store
+
+</Link>
+
+
+</div>
+
+
+
+
+<button
+
+className="
+mt-6
+w-full
+rounded-xl
+bg-gray-100
+py-3
+font-bold
+"
+
+>
+
+⚠️ Report Listing
+
+</button>
+
+
+
+</aside>
+{/* ================= SIMILAR PRODUCTS ================= */}
+
+
+<section className="
+col-span-full
+mt-10
+">
+
+
+<div className="
+rounded-3xl
+bg-white
+p-8
+">
+
+
+<div className="
+flex
+items-center
+justify-between
+">
+
+
+<h2 className="
+text-3xl
+font-black
+">
+
+Similar Products
+
+</h2>
+
+
+<Link
+
+href={`/browse?category=${product.category}`}
+
+className="
+font-bold
+text-indigo-600
+"
+
+>
+
+View More →
+
+</Link>
+
+
+</div>
+
+
+
+
+
+
+
+<div className="
+mt-8
+grid
+gap-6
+sm:grid-cols-2
+lg:grid-cols-3
+">
+
+
+{similarProducts.length > 0 ? (
+
+similarProducts.map(item => (
+
+
+<Link
+
+key={item.id}
+
+href={`/product/${item.slug}`}
+
+className="
+overflow-hidden
+rounded-3xl
+border
+transition
+hover:shadow-xl
+"
+
+>
+
+
+<div className="
+relative
+h-48
+bg-gray-100
+">
+
+
+{item.image ? (
+
+<Image
+
+src={item.image}
+
+alt={item.title}
+
+fill
+
+className="
+object-cover
+"
+
+/>
+
+) : (
+
+<div className="
+flex
+h-full
+items-center
+justify-center
+text-5xl
+">
+
+📦
+
+</div>
+
+)}
+
+
+
+</div>
+
+
+
+
+
+
+
+<div className="p-5">
+
+
+<span className="
+rounded-full
+bg-gray-100
+px-3
+py-1
+text-xs
+font-bold
+">
+
+{item.category || "General"}
+
+</span>
+
+
+
+
+
+<h3 className="
+mt-4
+truncate
+font-black
+">
+
+{item.title}
+
+</h3>
+
+
+
+
+
+<p className="
+mt-3
+text-xl
+font-black
+">
+
+{formatPrice(item.price)}
+
+</p>
+
+
+
+
+
+<p className="
+mt-2
+text-sm
+text-gray-500
+">
+
+📍 {item.location || "Canada"}
+
+</p>
+
+
+
+</div>
+
+
+</Link>
+
+
+))
+
+
+) : (
+
+
+<p className="
+text-gray-500
+">
+
+No similar products found.
+
+</p>
+
+
+)}
+
+
+</div>
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+</div>
+
+
+</main>
+
+);
+
 }
