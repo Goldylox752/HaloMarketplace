@@ -11,39 +11,42 @@ import CheckoutButton from "@/components/CheckoutButton";
 
 async function getProduct(slug){
 
-  const supabase = await createClient();
 
-
-  const {data,error} = await supabase
-
-    .from("products")
-
-    .select(`
-      *,
-      profiles:seller_id(
-        username,
-        avatar,
-        location,
-        rating,
-        review_count,
-        verified
-      )
-    `)
-
-    .eq("slug", slug)
-
-    .single();
+const supabase = await createClient();
 
 
 
-  if(error || !data){
+const {data,error}=await supabase
 
-    return null;
+.from("products")
 
-  }
+.select(`
+*,
+profiles:seller_id(
+username,
+avatar,
+location,
+rating,
+review_count,
+verified
+)
+`)
+
+.eq("slug",slug)
+
+.single();
 
 
-  return data;
+
+
+if(error || !data){
+
+return null;
+
+}
+
+
+return data;
 
 }
 
@@ -51,30 +54,57 @@ async function getProduct(slug){
 
 
 
-async function getRelatedProducts(category,id){
+
+
+async function getRelatedProducts(
+category,
+id
+){
 
 
 const supabase = await createClient();
 
 
-const {data} = await supabase
+
+const {data,error}=await supabase
 
 .from("products")
 
 .select(`
- id,
- title,
- price,
- image,
- slug
+id,
+title,
+price,
+image,
+slug
 `)
 
-.eq("category", category)
+.eq(
+"category",
+category
+)
 
-.neq("id", id)
+.neq(
+"id",
+id
+)
+
+.order(
+"created_at",
+{
+ascending:false
+}
+)
 
 .limit(4);
 
+
+
+
+if(error){
+
+return [];
+
+}
 
 
 return data || [];
@@ -86,10 +116,18 @@ return data || [];
 
 
 
-export async function generateMetadata({params}){
 
 
-const product = await getProduct(params.slug);
+export async function generateMetadata({
+params
+}){
+
+
+const {slug}=await params;
+
+
+
+const product = await getProduct(slug);
 
 
 
@@ -102,6 +140,7 @@ title:"Product Not Found"
 };
 
 }
+
 
 
 
@@ -123,8 +162,8 @@ product.description ||
 
 
 
-function formatPrice(price){
 
+function formatPrice(price){
 
 return new Intl.NumberFormat(
 "en-CA",
@@ -134,7 +173,6 @@ currency:"CAD"
 }
 ).format(price || 0);
 
-
 }
 
 
@@ -143,10 +181,13 @@ currency:"CAD"
 
 
 
-export default async function ProductPage({params}){
+
+export default async function ProductPage({
+params
+}){
 
 
-const {slug} = params;
+const {slug}=await params;
 
 
 
@@ -162,7 +203,9 @@ notFound();
 
 
 
-const relatedProducts = await getRelatedProducts(
+
+const relatedProducts =
+await getRelatedProducts(
 product.category,
 product.id
 );
@@ -171,12 +214,25 @@ product.id
 
 
 
+
+
 return (
 
-<main className="min-h-screen bg-gray-50 px-6 py-16">
+<main className="
+min-h-screen
+bg-gray-50
+px-6
+py-16
+">
 
 
-<div className="max-w-7xl mx-auto">
+<div className="
+mx-auto
+max-w-7xl
+">
+
+
+
 
 
 <Link
@@ -184,7 +240,7 @@ return (
 href="/browse"
 
 className="
-font-semibold
+font-bold
 text-indigo-600
 "
 
@@ -193,6 +249,8 @@ text-indigo-600
 ← Back to Marketplace
 
 </Link>
+
+
 
 
 
@@ -209,7 +267,6 @@ lg:grid-cols-2
 
 
 
-{/* PRODUCT IMAGE */}
 
 
 <div className="
@@ -250,8 +307,8 @@ object-cover
 
 
 <div className="
-h-[600px]
 flex
+h-[600px]
 items-center
 justify-center
 text-8xl
@@ -267,7 +324,6 @@ text-8xl
 }
 
 
-
 </div>
 
 
@@ -275,8 +331,6 @@ text-8xl
 
 
 
-
-{/* DETAILS */}
 
 
 
@@ -286,6 +340,9 @@ bg-white
 p-10
 shadow
 ">
+
+
+
 
 
 <span className="
@@ -306,6 +363,7 @@ text-indigo-700
 
 
 
+
 <h1 className="
 mt-6
 text-5xl
@@ -315,6 +373,7 @@ font-black
 {product.title}
 
 </h1>
+
 
 
 
@@ -330,6 +389,8 @@ text-indigo-600
 {formatPrice(product.price)}
 
 </p>
+
+
 
 
 
@@ -360,6 +421,8 @@ text-gray-600
 
 
 
+
+
 <section className="
 mt-10
 ">
@@ -373,6 +436,7 @@ font-black
 Description
 
 </h2>
+
 
 
 <p className="
@@ -396,20 +460,12 @@ text-gray-600
 
 
 
-{/* SELLER */}
 
 <section className="
 mt-10
 rounded-2xl
 border
 p-6
-">
-
-
-<div className="
-flex
-justify-between
-items-center
 ">
 
 
@@ -424,40 +480,11 @@ Seller
 
 
 
-{
-
-product.profiles?.verified && (
-
-<span className="
-rounded-full
-bg-green-100
-px-3
-py-1
-text-sm
-font-bold
-text-green-700
-">
-
-✓ Verified
-
-</span>
-
-
-)
-
-}
-
-
-</div>
-
-
-
-
 
 <p className="
-mt-5
-font-bold
+mt-4
 text-lg
+font-bold
 ">
 
 {product.profiles?.username || "Halo Seller"}
@@ -489,6 +516,7 @@ mt-2
 </p>
 
 
+
 </section>
 
 
@@ -496,8 +524,6 @@ mt-2
 
 
 
-
-{/* ACTION BUTTONS */}
 
 
 
@@ -524,9 +550,10 @@ productId={product.id}
 
 
 
+
 <Link
 
-href={`/messages?seller=${product.seller_id}&product=${product.id}`}
+href={`/messages?seller=${product.seller_id}`}
 
 className="
 block
@@ -545,12 +572,6 @@ hover:bg-gray-100
 </Link>
 
 
-</div>
-
-
-
-</div>
-
 
 </div>
 
@@ -559,9 +580,19 @@ hover:bg-gray-100
 
 
 
+</div>
 
 
-{/* RELATED PRODUCTS */}
+
+
+
+</div>
+
+
+
+
+
+
 
 
 
@@ -575,9 +606,9 @@ mt-20
 
 
 <h2 className="
+mb-8
 text-3xl
 font-black
-mb-8
 ">
 
 Related Listings
@@ -588,15 +619,13 @@ Related Listings
 
 <div className="
 grid
-grid-cols-1
+gap-6
 sm:grid-cols-2
 lg:grid-cols-4
-gap-6
 ">
 
 
 {
-
 relatedProducts.map(item=>(
 
 
@@ -607,10 +636,10 @@ key={item.id}
 href={`/product/${item.slug}`}
 
 className="
-bg-white
-rounded-2xl
-shadow
 overflow-hidden
+rounded-2xl
+bg-white
+shadow
 hover:shadow-xl
 "
 
@@ -645,17 +674,25 @@ object-cover
 
 
 
-<div className="p-5">
+<div className="
+p-5
+">
 
 
-<h3 className="font-bold">
+<h3 className="
+font-bold
+">
 
 {item.title}
 
 </h3>
 
 
-<p className="mt-2 font-bold">
+
+<p className="
+mt-2
+font-black
+">
 
 {formatPrice(item.price)}
 
@@ -687,12 +724,12 @@ object-cover
 
 
 
+
 </div>
 
 
 </main>
 
 );
-
 
 }
