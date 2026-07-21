@@ -1,102 +1,288 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 
 export default function ResetPasswordPage() {
+
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [session, setSession] = useState(null);
 
-  // Listen for the password recovery event – THIS IS THE KEY
+
   useEffect(() => {
-    // First, check if we already have a session (e.g., after page reload)
-    const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (data.session) {
-        setSession(data.session);
+
+    let subscription;
+
+
+    async function checkSession() {
+
+      const {
+        data:{
+          session
+        }
+      } = await supabase.auth.getSession();
+
+
+      if(session){
+
+        setSession(session);
         setLoading(false);
         return;
+
       }
 
-      // No session yet – wait for the auth state change
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+
+      const {
+        data
+      } = supabase.auth.onAuthStateChange(
+        (event, session)=>{
+
+          if(
+            event === "PASSWORD_RECOVERY" ||
+            event === "SIGNED_IN"
+          ){
+
             setSession(session);
             setLoading(false);
-          } else if (event === "SIGNED_OUT") {
-            // Something went wrong
-            setError("Invalid or expired reset link.");
-            setLoading(false);
+
           }
+
+
+          if(event === "SIGNED_OUT"){
+
+            setError(
+              "Invalid or expired reset link."
+            );
+
+            setLoading(false);
+
+          }
+
         }
       );
 
-      // Cleanup
-      return () => {
-        authListener?.subscription.unsubscribe();
-      };
-    };
+
+      subscription = data.subscription;
+
+    }
+
 
     checkSession();
+
+
+    return ()=>{
+
+      subscription?.unsubscribe();
+
+    };
+
+
   }, [supabase]);
 
-  // Update password
-  async function updatePassword(formData) {
-    const newPassword = formData.get("password")?.toString();
-    const confirm = formData.get("confirmPassword")?.toString();
 
-    if (!newPassword || !confirm) {
-      setError("All fields are required.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (newPassword !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
 
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
-      console.error("Update error:", error);
-      setError("Could not update password. Please try again.");
+  async function updatePassword(formData){
+
+    const password =
+      formData.get("password")?.toString();
+
+
+    const confirmPassword =
+      formData.get("confirmPassword")?.toString();
+
+
+
+    if(!password || !confirmPassword){
+
+      setError(
+        "All fields are required."
+      );
+
       return;
+
     }
 
-    // Sign out to clear the recovery session
+
+
+    if(password.length < 6){
+
+      setError(
+        "Password must be at least 6 characters."
+      );
+
+      return;
+
+    }
+
+
+
+    if(password !== confirmPassword){
+
+      setError(
+        "Passwords do not match."
+      );
+
+      return;
+
+    }
+
+
+
+    const {
+      error
+    } = await supabase.auth.updateUser({
+
+      password
+
+    });
+
+
+
+    if(error){
+
+      setError(
+        "Unable to update password."
+      );
+
+      return;
+
+    }
+
+
+
     await supabase.auth.signOut();
-    router.push("/login?message=Password updated successfully. Please log in.");
-  }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <p className="text-gray-500">Validating your link...</p>
-      </main>
+
+    router.push(
+      "/login?message=Password updated successfully"
     );
+
+
   }
 
-  if (!session) {
+
+
+  if(loading){
+
     return (
+
+      <main className="min-h-screen flex items-center justify-center">
+
+        <p>
+          Validating your reset link...
+        </p>
+
+      </main>
+
+    );
+
+  }
+
+
+
+  if(!session){
+
+    return (
+
       <main className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow p-10 text-center">
-          <h1 className="text-2xl font-bold text-red-600">Invalid Link</h1>
+
+        <div className="w-full max-w-md rounded-3xl bg-white p-10 text-center shadow">
+
+          <h1 className="text-2xl font-black text-red-600">
+            Invalid Link
+          </h1>
+
+
           <p className="mt-4 text-gray-600">
-            The reset link is invalid or has expired.
+            {error || "The reset link is invalid or expired."}
           </p>
-          <Link href="/forgot-password" className="mt-6 inline-block text-indigo-600 font-bold">
-            Request a new one
+
+
+          <Link
+            href="/forgot-password"
+            className="mt-6 inline-block font-bold text-indigo-600"
+          >
+            Request New Link
           </Link>
+
+
         </div>
+
       </main>
+
     );
+
   }
+
+
+
+  return (
+
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+
+
+      <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow">
+
+
+        <h1 className="text-3xl font-black">
+          Create New Password
+        </h1>
+
+
+        {error && (
+
+          <p className="mt-4 rounded-xl bg-red-50 p-3 text-red-600">
+            {error}
+          </p>
+
+        )}
+
+
+
+        <form
+          action={updatePassword}
+          className="mt-6 space-y-4"
+        >
+
+
+          <input
+            name="password"
+            type="password"
+            placeholder="New password"
+            className="w-full rounded-xl border px-4 py-3"
+            required
+          />
+
+
+          <input
+            name="confirmPassword"
+            type="password"
+            placeholder="Confirm password"
+            className="w-full rounded-xl border px-4 py-3"
+            required
+          />
+
+
+          <SubmitButton>
+            Update Password
+          </SubmitButton>
+
+
+        </form>
+
+
+      </div>
+
+
+    </main>
+
+  );
+
+}
