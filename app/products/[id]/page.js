@@ -8,6 +8,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import CheckoutButton from "@/components/CheckoutButton";
 
 
+
 async function getProduct(slug){
 
   const supabase = await createClient();
@@ -29,7 +30,7 @@ async function getProduct(slug){
       )
     `)
 
-    .eq("slug",slug)
+    .eq("slug", slug)
 
     .single();
 
@@ -49,9 +50,47 @@ async function getProduct(slug){
 
 
 
+
+async function getRelatedProducts(category,id){
+
+
+const supabase = await createClient();
+
+
+const {data} = await supabase
+
+.from("products")
+
+.select(`
+ id,
+ title,
+ price,
+ image,
+ slug
+`)
+
+.eq("category", category)
+
+.neq("id", id)
+
+.limit(4);
+
+
+
+return data || [];
+
+}
+
+
+
+
+
+
 export async function generateMetadata({params}){
 
+
 const product = await getProduct(params.slug);
+
 
 
 if(!product){
@@ -68,11 +107,11 @@ title:"Product Not Found"
 
 return {
 
-title:`${product.title} | Halo Market`,
+title:`${product.title} | Halo Marketplace`,
 
 description:
 product.description ||
-`Buy ${product.title} on Halo Market`
+`Buy ${product.title} on Halo Marketplace`
 
 };
 
@@ -83,7 +122,9 @@ product.description ||
 
 
 
+
 function formatPrice(price){
+
 
 return new Intl.NumberFormat(
 "en-CA",
@@ -93,7 +134,10 @@ currency:"CAD"
 }
 ).format(price || 0);
 
+
 }
+
+
 
 
 
@@ -102,7 +146,8 @@ currency:"CAD"
 export default async function ProductPage({params}){
 
 
-const {slug} = await params;
+const {slug} = params;
+
 
 
 const product = await getProduct(slug);
@@ -117,19 +162,31 @@ notFound();
 
 
 
+const relatedProducts = await getRelatedProducts(
+product.category,
+product.id
+);
+
+
+
+
+
 return (
 
 <main className="min-h-screen bg-gray-50 px-6 py-16">
 
 
-<div className="mx-auto max-w-7xl">
+<div className="max-w-7xl mx-auto">
 
 
 <Link
 
-href="/products"
+href="/browse"
 
-className="font-semibold text-indigo-600"
+className="
+font-semibold
+text-indigo-600
+"
 
 >
 
@@ -139,17 +196,34 @@ className="font-semibold text-indigo-600"
 
 
 
-<div className="mt-8 grid gap-12 lg:grid-cols-2">
+
+
+<div className="
+mt-8
+grid
+gap-12
+lg:grid-cols-2
+">
 
 
 
-{/* IMAGE */}
 
 
-<div className="overflow-hidden rounded-3xl bg-white shadow">
+{/* PRODUCT IMAGE */}
 
 
-{product.image ? (
+<div className="
+overflow-hidden
+rounded-3xl
+bg-white
+shadow
+">
+
+
+{
+
+product.image ? (
+
 
 <Image
 
@@ -163,7 +237,11 @@ height={900}
 
 priority
 
-className="h-[600px] w-full object-cover"
+className="
+h-[600px]
+w-full
+object-cover
+"
 
 />
 
@@ -171,14 +249,23 @@ className="h-[600px] w-full object-cover"
 ):(
 
 
-<div className="flex h-[600px] items-center justify-center text-8xl">
+<div className="
+h-[600px]
+flex
+items-center
+justify-center
+text-8xl
+">
 
 📦
 
 </div>
 
 
-)}
+)
+
+}
+
 
 
 </div>
@@ -192,11 +279,24 @@ className="h-[600px] w-full object-cover"
 {/* DETAILS */}
 
 
-<div className="rounded-3xl bg-white p-10 shadow">
+
+<div className="
+rounded-3xl
+bg-white
+p-10
+shadow
+">
 
 
-
-<span className="rounded-full bg-indigo-100 px-4 py-2 text-sm font-bold text-indigo-700">
+<span className="
+rounded-full
+bg-indigo-100
+px-4
+py-2
+text-sm
+font-bold
+text-indigo-700
+">
 
 {product.category || "General"}
 
@@ -206,7 +306,11 @@ className="h-[600px] w-full object-cover"
 
 
 
-<h1 className="mt-6 text-5xl font-black">
+<h1 className="
+mt-6
+text-5xl
+font-black
+">
 
 {product.title}
 
@@ -214,7 +318,14 @@ className="h-[600px] w-full object-cover"
 
 
 
-<p className="mt-6 text-4xl font-black text-indigo-600">
+
+
+<p className="
+mt-6
+text-4xl
+font-black
+text-indigo-600
+">
 
 {formatPrice(product.price)}
 
@@ -224,7 +335,11 @@ className="h-[600px] w-full object-cover"
 
 
 
-<div className="mt-6 space-y-2 text-gray-600">
+<div className="
+mt-6
+space-y-2
+text-gray-600
+">
 
 
 <p>
@@ -244,17 +359,27 @@ className="h-[600px] w-full object-cover"
 
 
 
-<section className="mt-10">
+
+<section className="
+mt-10
+">
 
 
-<h2 className="text-xl font-black">
+<h2 className="
+text-xl
+font-black
+">
 
 Description
 
 </h2>
 
 
-<p className="mt-4 leading-7 text-gray-600">
+<p className="
+mt-4
+leading-7
+text-gray-600
+">
 
 {product.description || 
 "No description available."}
@@ -270,16 +395,28 @@ Description
 
 
 
+
 {/* SELLER */}
 
+<section className="
+mt-10
+rounded-2xl
+border
+p-6
+">
 
-<section className="mt-10 rounded-2xl border p-6">
+
+<div className="
+flex
+justify-between
+items-center
+">
 
 
-<div className="flex justify-between">
-
-
-<h2 className="text-xl font-black">
+<h2 className="
+text-xl
+font-black
+">
 
 Seller
 
@@ -287,15 +424,28 @@ Seller
 
 
 
-{product.profiles?.verified && (
+{
 
-<span className="rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-700">
+product.profiles?.verified && (
+
+<span className="
+rounded-full
+bg-green-100
+px-3
+py-1
+text-sm
+font-bold
+text-green-700
+">
 
 ✓ Verified
 
 </span>
 
-)}
+
+)
+
+}
 
 
 </div>
@@ -304,7 +454,11 @@ Seller
 
 
 
-<p className="mt-5 text-lg font-bold">
+<p className="
+mt-5
+font-bold
+text-lg
+">
 
 {product.profiles?.username || "Halo Seller"}
 
@@ -312,7 +466,10 @@ Seller
 
 
 
-<p className="mt-2 text-gray-500">
+<p className="
+mt-2
+text-gray-500
+">
 
 📍 {product.profiles?.location || "Canada"}
 
@@ -320,7 +477,10 @@ Seller
 
 
 
-<p className="mt-2">
+
+<p className="
+mt-2
+">
 
 ⭐ {product.profiles?.rating || "5.0"}
 
@@ -337,10 +497,14 @@ Seller
 
 
 
-{/* ACTIONS */}
+{/* ACTION BUTTONS */}
 
 
-<div className="mt-10 space-y-4">
+
+<div className="
+mt-10
+space-y-4
+">
 
 
 <CheckoutButton
@@ -359,11 +523,20 @@ productId={product.id}
 
 
 
+
 <Link
 
 href={`/messages?seller=${product.seller_id}&product=${product.id}`}
 
-className="block rounded-xl border py-4 text-center font-bold hover:bg-gray-100"
+className="
+block
+rounded-xl
+border
+py-4
+text-center
+font-bold
+hover:bg-gray-100
+"
 
 >
 
@@ -372,17 +545,146 @@ className="block rounded-xl border py-4 text-center font-bold hover:bg-gray-100"
 </Link>
 
 
+</div>
+
+
+
+</div>
+
 
 </div>
 
 
 
 
+
+
+
+
+{/* RELATED PRODUCTS */}
+
+
+
+{
+relatedProducts.length > 0 && (
+
+
+<section className="
+mt-20
+">
+
+
+<h2 className="
+text-3xl
+font-black
+mb-8
+">
+
+Related Listings
+
+</h2>
+
+
+
+<div className="
+grid
+grid-cols-1
+sm:grid-cols-2
+lg:grid-cols-4
+gap-6
+">
+
+
+{
+
+relatedProducts.map(item=>(
+
+
+<Link
+
+key={item.id}
+
+href={`/product/${item.slug}`}
+
+className="
+bg-white
+rounded-2xl
+shadow
+overflow-hidden
+hover:shadow-xl
+"
+
+>
+
+
+{
+
+item.image && (
+
+<Image
+
+src={item.image}
+
+alt={item.title}
+
+width={400}
+
+height={300}
+
+className="
+h-48
+w-full
+object-cover
+"
+
+/>
+
+)
+
+}
+
+
+
+<div className="p-5">
+
+
+<h3 className="font-bold">
+
+{item.title}
+
+</h3>
+
+
+<p className="mt-2 font-bold">
+
+{formatPrice(item.price)}
+
+</p>
+
+
 </div>
 
 
+</Link>
+
+
+))
+
+}
+
+
 
 </div>
+
+
+</section>
+
+
+)
+
+}
+
+
 
 
 </div>
