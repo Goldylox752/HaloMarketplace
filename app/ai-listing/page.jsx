@@ -5,19 +5,23 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
 
-title:"AI Listing Assistant | Halo Marketplace",
+title:"Halo AI Listing Creator",
 
 description:
-"Create marketplace listings instantly with Halo AI."
+"Create professional marketplace listings instantly with Halo AI."
 
 };
+
+
 
 
 
 export default async function AIListingPage(){
 
 
-const supabase = await createClient();
+const supabase =
+await createClient();
+
 
 
 const {
@@ -37,7 +41,6 @@ redirect("/login");
 
 
 
-
 return (
 
 <main className="
@@ -48,59 +51,110 @@ py-16
 ">
 
 
+
 <div className="
 mx-auto
-max-w-5xl
+max-w-6xl
 ">
 
 
 
+
+
 <section className="
-rounded-3xl
-bg-black
+rounded-[40px]
+bg-gradient-to-br
+from-black
+via-gray-900
+to-gray-800
 p-12
 text-white
 ">
 
 
-<span className="
+<div className="
+inline-flex
 rounded-full
 bg-white/10
-px-4
+px-5
 py-2
-text-sm
 font-bold
 ">
 
-🤖 Halo AI
+🤖 Halo AI Marketplace Assistant
 
-</span>
+</div>
+
 
 
 
 <h1 className="
-mt-6
+mt-8
 text-5xl
 font-black
+md:text-7xl
 ">
 
-Create Listings
-10x Faster
+Sell Faster
+With AI
 
 </h1>
 
 
 
+
 <p className="
-mt-5
-max-w-2xl
+mt-6
+max-w-3xl
 text-xl
 text-gray-300
 ">
 
-Upload your product details and Halo AI will create a professional marketplace listing with a title, description, category and pricing suggestion.
+Halo AI creates optimized marketplace listings,
+suggests pricing, improves descriptions and helps
+your products sell faster.
 
 </p>
+
+
+
+
+<div className="
+mt-8
+flex
+gap-4
+flex-wrap
+">
+
+
+<div className="
+rounded-xl
+bg-white/10
+px-5
+py-3
+font-bold
+">
+
+⚡ 10x Faster Listings
+
+</div>
+
+
+<div className="
+rounded-xl
+bg-white/10
+px-5
+py-3
+font-bold
+">
+
+🇨🇦 Canada Marketplace
+
+</div>
+
+
+</div>
+
 
 
 </section>
@@ -111,8 +165,24 @@ Upload your product details and Halo AI will create a professional marketplace l
 
 
 
+
 <section className="
 mt-10
+grid
+gap-8
+lg:grid-cols-2
+">
+
+
+
+
+
+
+{/* INPUT */}
+
+
+
+<div className="
 rounded-3xl
 bg-white
 p-10
@@ -120,35 +190,42 @@ shadow
 ">
 
 
+<h2 className="
+text-3xl
+font-black
+">
+
+Product Details
+
+</h2>
+
+
+
 <form
+
 action="/api/ai-listing"
+
 method="POST"
+
 className="
-space-y-6
+mt-8
+space-y-5
 "
+
 >
 
 
-
-<div>
-
-
-<label className="
-mb-2
-block
-font-bold
-">
-
-Product Name
-
-</label>
 
 
 <input
 
 name="product"
 
-placeholder="Example: MacBook Air M1"
+required
+
+placeholder="
+Product name
+"
 
 className="
 w-full
@@ -161,26 +238,7 @@ py-4
 />
 
 
-</div>
 
-
-
-
-
-
-
-<div>
-
-
-<label className="
-mb-2
-block
-font-bold
-">
-
-Condition
-
-</label>
 
 
 <select
@@ -196,6 +254,7 @@ py-4
 "
 
 >
+
 
 <option>
 New
@@ -213,45 +272,24 @@ Good
 Used
 </option>
 
-<option>
-Needs Repair
-</option>
-
 
 </select>
 
 
-</div>
 
 
 
 
-
-
-
-
-<div>
-
-
-<label className="
-mb-2
-block
-font-bold
-">
-
-Extra Details
-
-</label>
 
 
 <textarea
 
 name="details"
 
-rows="5"
+rows="6"
 
 placeholder="
-Brand, model, features, accessories, location...
+Brand, model, features, accessories...
 "
 
 className="
@@ -265,33 +303,18 @@ py-4
 />
 
 
-</div>
 
 
 
-
-
-
-
-<div>
-
-
-<label className="
-mb-2
-block
-font-bold
-">
-
-Image URL
-
-</label>
 
 
 <input
 
 name="image"
 
-placeholder="https://..."
+placeholder="
+Image URL
+"
 
 className="
 w-full
@@ -303,8 +326,6 @@ py-4
 
 />
 
-
-</div>
 
 
 
@@ -326,7 +347,7 @@ hover:bg-gray-800
 
 >
 
-✨ Generate AI Listing
+✨ Generate Listing
 
 </button>
 
@@ -335,7 +356,122 @@ hover:bg-gray-800
 </form>
 
 
+</div>
+
+
+
+
+
+
+
+
+
+{/* AI PREVIEW */}
+
+
+
+<div className="
+rounded-3xl
+bg-white
+p-10
+shadow
+">
+
+
+<h2 className="
+text-3xl
+font-black
+">
+
+AI Preview
+
+</h2>
+
+
+
+<div className="
+mt-8
+rounded-3xl
+bg-gray-100
+p-8
+text-center
+">
+
+
+<div className="
+text-6xl
+">
+
+🤖
+
+</div>
+
+
+
+<h3 className="
+mt-5
+text-xl
+font-bold
+">
+
+Your AI listing will appear here
+
+</h3>
+
+
+
+<p className="
+mt-3
+text-gray-500
+">
+
+Halo AI will generate:
+
+</p>
+
+
+
+
+<ul className="
+mt-5
+space-y-3
+text-left
+">
+
+<li>
+✅ Professional title
+</li>
+
+<li>
+✅ Sales description
+</li>
+
+<li>
+✅ Suggested price
+</li>
+
+<li>
+✅ Category
+</li>
+
+<li>
+✅ Search keywords
+</li>
+
+
+</ul>
+
+
+</div>
+
+
+
+</div>
+
+
+
 </section>
+
 
 
 
@@ -353,22 +489,22 @@ md:grid-cols-4
 
 {[
 
-["📝","Smart Titles"],
-["💰","Price Suggestions"],
-["🔍","SEO Keywords"],
-["⚡","Fast Selling"]
+["📝","AI Titles"],
+["💰","Smart Pricing"],
+["🔎","SEO Search"],
+["🚀","More Sales"]
 
-].map(item=>(
+].map(feature=>(
 
 
 <div
 
-key={item[1]}
+key={feature[1]}
 
 className="
 rounded-3xl
 bg-white
-p-6
+p-7
 text-center
 shadow-sm
 "
@@ -377,20 +513,20 @@ shadow-sm
 
 
 <div className="
-text-4xl
+text-5xl
 ">
 
-{item[0]}
+{feature[0]}
 
 </div>
 
 
 <h3 className="
-mt-3
+mt-4
 font-black
 ">
 
-{item[1]}
+{feature[1]}
 
 </h3>
 
@@ -401,8 +537,8 @@ font-black
 ))}
 
 
-
 </section>
+
 
 
 
@@ -426,13 +562,12 @@ text-indigo-600
 
 >
 
-← Create normal listing
+← Back to Sell
 
 </Link>
 
 
 </div>
-
 
 
 
