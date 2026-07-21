@@ -1,80 +1,78 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClientComponentClient();
+
+  const supabase = useMemo(() => createClient(), []);
+
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Fetch user on mount and listen for auth changes
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
-      }
-    );
+      setUser(user ?? null);
+    }
 
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
 
-  const handleLogout = async () => {
+  async function handleLogout() {
     await supabase.auth.signOut();
+
     router.push("/");
     router.refresh();
-  };
+  }
 
-  // Navigation links
-  const navLinks = [
+  const links = [
     { name: "Home", href: "/" },
     { name: "Marketplace", href: "/browse" },
     { name: "Sell", href: "/sell" },
+    ...(user
+      ? [
+          { name: "Dashboard", href: "/dashboard" },
+          { name: "Messages", href: "/messages" },
+        ]
+      : []),
   ];
-
-  // Only show dashboard & messages if logged in
-  const authLinks = user
-    ? [
-        { name: "Dashboard", href: "/dashboard" },
-        { name: "Messages", href: "/messages" },
-      ]
-    : [];
-
-  const allLinks = [...navLinks, ...authLinks];
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo */}
         <Link href="/" className="text-3xl font-black">
           Halo<span className="text-indigo-600">.</span>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 lg:flex">
-          {allLinks.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-semibold hover:text-indigo-600 ${
-                pathname === link.href ? "text-indigo-600" : ""
+              className={`text-sm font-semibold transition-colors ${
+                pathname === link.href
+                  ? "text-indigo-600"
+                  : "hover:text-indigo-600"
               }`}
             >
               {link.name}
@@ -82,14 +80,14 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop Auth Buttons */}
         <div className="hidden items-center gap-3 lg:flex">
           {user ? (
             <>
               <span className="text-sm text-gray-600">{user.email}</span>
+
               <button
                 onClick={handleLogout}
-                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white hover:bg-red-600"
+                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
               >
                 Logout
               </button>
@@ -102,6 +100,7 @@ export default function Navbar() {
               >
                 Login
               </Link>
+
               <Link
                 href="/signup"
                 className="rounded-xl bg-indigo-600 px-5 py-2 font-bold text-white hover:bg-indigo-700"
@@ -112,9 +111,8 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Toggle */}
         <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          onClick={() => setIsMenuOpen((open) => !open)}
           className="rounded-lg border px-3 py-2 lg:hidden"
           aria-label="Toggle menu"
         >
@@ -122,28 +120,32 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Menu (expanded) */}
       {isMenuOpen && (
-        <div className="border-t border-gray-200 bg-white px-6 py-4 lg:hidden">
-          <div className="flex flex-col space-y-3">
-            {allLinks.map((link) => (
+        <div className="border-t bg-white px-6 py-4 lg:hidden">
+          <div className="flex flex-col gap-3">
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-base font-semibold hover:text-indigo-600 ${
-                  pathname === link.href ? "text-indigo-600" : ""
+                className={`font-semibold ${
+                  pathname === link.href
+                    ? "text-indigo-600"
+                    : "hover:text-indigo-600"
                 }`}
               >
                 {link.name}
               </Link>
             ))}
-            <hr className="my-2" />
+
+            <hr />
+
             {user ? (
               <>
                 <span className="text-sm text-gray-600">{user.email}</span>
+
                 <button
                   onClick={handleLogout}
-                  className="text-left text-base font-semibold text-red-600 hover:text-red-800"
+                  className="text-left font-semibold text-red-600 hover:text-red-800"
                 >
                   Logout
                 </button>
@@ -152,10 +154,11 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="text-base font-semibold hover:text-indigo-600"
+                  className="font-semibold hover:text-indigo-600"
                 >
                   Login
                 </Link>
+
                 <Link
                   href="/signup"
                   className="rounded-xl bg-indigo-600 px-4 py-2 text-center font-bold text-white hover:bg-indigo-700"
