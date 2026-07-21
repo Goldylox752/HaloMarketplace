@@ -3,82 +3,76 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 
-
 async function getProducts(search, category, location){
 
-  const supabase = await createClient();
+const supabase = await createClient();
+
+
+let query = supabase
+.from("products")
+.select(`
+id,
+title,
+price,
+image,
+location,
+slug,
+category
+`)
+.order("created_at",{
+ascending:false
+})
+.limit(12);
 
 
 
-  let query = supabase
-    .from("products")
-    .select(`
-      id,
-      title,
-      price,
-      image,
-      location,
-      slug,
-      category
-    `)
-    .order("created_at", {
-      ascending:false
-    })
-    .limit(12);
+if(search){
+
+query=query.ilike(
+"title",
+`%${search}%`
+);
+
+}
 
 
 
-  if(search){
+if(category){
 
-    query = query.ilike(
-      "title",
-      `%${search}%`
-    );
+query=query.eq(
+"category",
+category
+);
 
-  }
-
-
-
-  if(category){
-
-    query = query.eq(
-      "category",
-      category
-    );
-
-  }
+}
 
 
 
-  if(location){
+if(location){
 
-    query = query.ilike(
-      "location",
-      `%${location}%`
-    );
+query=query.ilike(
+"location",
+`%${location}%`
+);
 
-  }
-
-
-
-  const {
-    data:products,
-    error
-  } = await query;
+}
 
 
 
-  if(error){
-
-    console.log(error);
-
-    return [];
-
-  }
+const {data,error}=await query;
 
 
 
-  return products || [];
+if(error){
+
+console.log(error);
+
+return [];
+
+}
+
+
+return data || [];
 
 }
 
@@ -86,15 +80,15 @@ async function getProducts(search, category, location){
 
 
 
-export const metadata = {
+export const metadata={
 
-  title:"Halo Marketplace | Buy & Sell Locally",
+title:
+"Halo Marketplace | Buy & Sell Across Canada",
 
-  description:
-  "Buy, sell, and discover products on Halo Marketplace."
+description:
+"Buy and sell electronics, vehicles, home goods and more on Halo Marketplace."
 
 };
-
 
 
 
@@ -103,21 +97,22 @@ export const metadata = {
 export default async function Home({searchParams}){
 
 
-const search = searchParams?.search || "";
-
-const category = searchParams?.category || "";
-
-const location = searchParams?.location || "";
+const params = await searchParams;
 
 
+const search=params?.search || "";
 
-const products = await getProducts(
-  search,
-  category,
-  location
+const category=params?.category || "";
+
+const location=params?.location || "";
+
+
+
+const products=await getProducts(
+search,
+category,
+location
 );
-
-
 
 
 
@@ -126,28 +121,18 @@ return (
 <main className="min-h-screen bg-white">
 
 
-
 {/* HERO */}
 
-
-<section className="
-bg-black
-text-white
-py-20
-px-6
-">
+<section className="bg-black text-white px-6 py-24">
 
 
-<div className="
-max-w-6xl
-mx-auto
-">
+<div className="max-w-6xl mx-auto">
 
 
 <h1 className="
 text-5xl
-md:text-6xl
-font-bold
+md:text-7xl
+font-black
 ">
 
 Halo Marketplace
@@ -157,24 +142,19 @@ Halo Marketplace
 
 
 <p className="
-mt-5
+mt-6
 max-w-2xl
 text-xl
 text-gray-300
 ">
 
-Buy, sell, and discover products from people near you.
+Canada's modern marketplace to buy, sell, and discover products locally.
 
 </p>
 
 
 
-
-<div className="
-flex
-gap-4
-mt-8
-">
+<div className="flex gap-4 mt-8">
 
 
 <Link
@@ -184,10 +164,10 @@ href="/sell"
 className="
 rounded-xl
 bg-white
-px-6
-py-3
-font-semibold
 text-black
+px-7
+py-4
+font-bold
 "
 
 >
@@ -206,9 +186,9 @@ className="
 rounded-xl
 border
 border-white
-px-6
-py-3
-font-semibold
+px-7
+py-4
+font-bold
 "
 
 >
@@ -230,17 +210,68 @@ Browse Listings
 
 
 
+{/* TRUST STATS */}
+
+<section className="
+max-w-6xl
+mx-auto
+grid
+grid-cols-2
+md:grid-cols-4
+gap-5
+px-6
+py-12
+">
 
 
-{/* SEARCH FILTERS */}
+{[
+["10,000+","Products"],
+["5,000+","Sellers"],
+["Canada","Wide"],
+["Secure","Payments"]
+].map(stat=>(
 
+
+<div
+key={stat[1]}
+className="
+rounded-2xl
+bg-gray-100
+p-6
+text-center
+"
+>
+
+<h3 className="text-3xl font-black">
+{stat[0]}
+</h3>
+
+<p className="text-gray-500 mt-2">
+{stat[1]}
+</p>
+
+
+</div>
+
+
+))}
+
+
+</section>
+
+
+
+
+
+
+
+{/* SEARCH */}
 
 
 <section className="
 max-w-6xl
 mx-auto
 px-6
--mt-8
 ">
 
 
@@ -249,13 +280,13 @@ px-6
 action="/"
 
 className="
-bg-white
-rounded-2xl
-shadow-xl
-p-6
 grid
 md:grid-cols-4
 gap-4
+bg-white
+rounded-3xl
+shadow-xl
+p-6
 "
 
 >
@@ -274,11 +305,9 @@ border
 rounded-xl
 px-5
 py-4
-outline-none
 "
 
 />
-
 
 
 
@@ -302,25 +331,27 @@ py-4
 All Categories
 </option>
 
-<option value="Electronics">
+<option>
 Electronics
 </option>
 
-<option value="Vehicles">
+<option>
 Vehicles
 </option>
 
-<option value="Home">
+<option>
 Home
 </option>
 
-<option value="Gaming">
+<option>
 Gaming
 </option>
 
+<option>
+Tools
+</option>
 
 </select>
-
 
 
 
@@ -342,18 +373,18 @@ py-4
 >
 
 <option value="">
-All Locations
+All Canada
 </option>
 
-<option value="Alberta">
+<option>
 Alberta
 </option>
 
-<option value="Ontario">
+<option>
 Ontario
 </option>
 
-<option value="British Columbia">
+<option>
 British Columbia
 </option>
 
@@ -363,18 +394,13 @@ British Columbia
 
 
 
-
 <button
-
-type="submit"
 
 className="
 rounded-xl
 bg-black
-px-6
-py-4
-font-semibold
 text-white
+font-bold
 "
 
 >
@@ -396,23 +422,21 @@ Search
 
 
 
-
 {/* CATEGORIES */}
-
 
 
 <section className="
 max-w-6xl
 mx-auto
 px-6
-py-12
+py-16
 ">
 
 
 <h2 className="
-mb-6
-text-2xl
-font-bold
+text-3xl
+font-black
+mb-8
 ">
 
 Explore Categories
@@ -421,49 +445,47 @@ Explore Categories
 
 
 
-
 <div className="
 grid
 grid-cols-2
-md:grid-cols-4
+md:grid-cols-6
 gap-4
 ">
 
 
-{
-[
-"Electronics",
-"Vehicles",
-"Home",
-"Gaming"
-].map(item=>(
+{[
+"📱 Electronics",
+"🚗 Vehicles",
+"🏠 Home",
+"🎮 Gaming",
+"🛠 Tools",
+"⚽ Sports"
+].map(cat=>(
 
 
 <Link
 
-key={item}
+key={cat}
 
-href={`/?category=${item}`}
+href={`/?category=${cat.split(" ")[1]}`}
 
 className="
-rounded-xl
+rounded-2xl
 border
 p-6
 text-center
+font-bold
 hover:shadow-lg
 "
 
 >
 
-{item}
+{cat}
 
 </Link>
 
 
-))
-
-}
-
+))}
 
 
 </div>
@@ -477,9 +499,7 @@ hover:shadow-lg
 
 
 
-
-{/* LISTINGS */}
-
+{/* PRODUCTS */}
 
 
 <section className="
@@ -493,105 +513,48 @@ pb-20
 <div className="
 flex
 justify-between
-items-center
 mb-8
 ">
 
 
 <h2 className="
 text-3xl
-font-bold
+font-black
 ">
 
-{
-search || category || location
-
-? "Search Results"
-
-: "Latest Listings"
-
-}
+{search || category ? "Results" : "Latest Listings"}
 
 </h2>
-
 
 
 <Link
 
 href="/browse"
 
-className="
-text-blue-600
-font-semibold
-"
+className="text-indigo-600 font-bold"
 
 >
 
-View All
+View All →
 
 </Link>
 
 
-
 </div>
 
 
-
-
-
-
-
-{
-products.length === 0 ? (
-
-
-<div className="
-rounded-2xl
-bg-gray-100
-p-12
-text-center
-">
-
-
-<h3 className="
-text-2xl
-font-bold
-">
-
-No listings found
-
-</h3>
-
-
-<p className="
-mt-3
-text-gray-500
-">
-
-Try changing your search filters.
-
-</p>
-
-
-</div>
-
-
-):(
 
 
 
 <div className="
 grid
-grid-cols-1
 sm:grid-cols-2
 lg:grid-cols-4
 gap-6
 ">
 
 
-{
-
-products.map(product=>(
+{products.map((product,index)=>(
 
 
 <Link
@@ -601,11 +564,12 @@ key={product.id}
 href={`/product/${product.slug}`}
 
 className="
+rounded-3xl
 overflow-hidden
-rounded-2xl
+bg-white
 border
-transition
 hover:shadow-xl
+transition
 "
 
 >
@@ -613,15 +577,12 @@ hover:shadow-xl
 
 <div className="
 relative
-h-52
+h-56
 bg-gray-100
 ">
 
 
-{
-
-product.image ? (
-
+{product.image ? (
 
 <Image
 
@@ -631,11 +592,9 @@ alt={product.title}
 
 fill
 
-sizes="(max-width:768px)100vw,25vw"
+priority={index < 4}
 
-className="
-object-cover
-"
+className="object-cover"
 
 />
 
@@ -645,26 +604,21 @@ object-cover
 
 <div className="
 flex
-h-full
 items-center
 justify-center
-text-gray-400
+h-full
+text-5xl
 ">
 
-No Image
+📦
 
 </div>
 
 
-)
-
-}
+)}
 
 
 </div>
-
-
-
 
 
 
@@ -672,9 +626,8 @@ No Image
 
 
 <h3 className="
-truncate
 font-bold
-text-lg
+truncate
 ">
 
 {product.title}
@@ -682,10 +635,8 @@ text-lg
 </h3>
 
 
-
 <p className="
 mt-2
-text-sm
 text-gray-500
 ">
 
@@ -706,54 +657,21 @@ ${Number(product.price).toLocaleString("en-CA")}
 </p>
 
 
-
-{
-product.category && (
-
-<span className="
-mt-3
-inline-block
-rounded-full
-bg-gray-100
-px-3
-py-1
-text-sm
-">
-
-{product.category}
-
-</span>
-
-)
-
-}
-
-
-
 </div>
+
 
 
 </Link>
 
 
-))
-
-}
+))}
 
 
 
 </div>
 
 
-
-)
-
-}
-
-
-
 </section>
-
 
 
 
@@ -764,31 +682,31 @@ text-sm
 {/* SELL CTA */}
 
 
-
 <section className="
-bg-gray-100
-py-16
-px-6
+bg-black
+text-white
 text-center
+py-20
+px-6
 ">
 
 
 <h2 className="
-text-3xl
-font-bold
+text-4xl
+font-black
 ">
 
-Ready to sell?
+Start Selling Today
 
 </h2>
 
 
 <p className="
-mt-3
-text-gray-600
+mt-4
+text-gray-300
 ">
 
-Create your listing and reach buyers today.
+Create your free listing and reach buyers across Canada.
 
 </p>
 
@@ -799,22 +717,21 @@ Create your listing and reach buyers today.
 href="/sell"
 
 className="
-mt-6
 inline-block
-rounded-xl
-bg-black
+mt-8
+bg-white
+text-black
 px-8
-py-3
+py-4
+rounded-xl
 font-bold
-text-white
 "
 
 >
 
-Post Item
+Create Listing
 
 </Link>
-
 
 
 </section>
@@ -823,6 +740,6 @@ Post Item
 
 </main>
 
-);
+)
 
 }
