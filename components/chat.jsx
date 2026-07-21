@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,21 +9,25 @@ export default function Chat({
 
 user,
 
-initialMessages
+receiverId,
+
+initialMessages = []
 
 }){
 
 
-const [messages,setMessages]=useState(
+const supabase = createClient();
+
+
+const [messages,setMessages] = useState(
 initialMessages
 );
 
 
-const [text,setText]=useState("");
+const [text,setText] = useState("");
 
+const [loading,setLoading] = useState(false);
 
-
-const supabase=createClient();
 
 
 
@@ -53,13 +56,34 @@ table:"messages"
 (payload)=>{
 
 
+const newMessage = payload.new;
+
+
+
+if(
+
+(newMessage.sender_id === user.id &&
+newMessage.receiver_id === receiverId)
+
+||
+
+(newMessage.sender_id === receiverId &&
+newMessage.receiver_id === user.id)
+
+){
+
+
 setMessages(prev=>[
 
 ...prev,
 
-payload.new
+newMessage
 
 ]);
+
+
+}
+
 
 
 }
@@ -70,6 +94,8 @@ payload.new
 
 
 
+
+
 return ()=>{
 
 supabase.removeChannel(channel);
@@ -77,7 +103,11 @@ supabase.removeChannel(channel);
 };
 
 
-},[]);
+
+},[user.id,receiverId]);
+
+
+
 
 
 
@@ -87,11 +117,22 @@ supabase.removeChannel(channel);
 async function sendMessage(){
 
 
-if(!text)return;
+if(!text.trim()) return;
 
 
 
-await supabase
+setLoading(true);
+
+
+
+
+const {
+
+data,
+
+error
+
+}= await supabase
 
 .from("messages")
 
@@ -99,17 +140,44 @@ await supabase
 
 sender_id:user.id,
 
-receiver_id:user.id,
+receiver_id:receiverId,
 
-message:text
+message:text.trim()
 
-});
+})
+
+.select()
+
+.single();
+
+
+
+
+
+if(!error && data){
+
+
+setMessages(prev=>[
+
+...prev,
+
+data
+
+]);
+
+
+}
 
 
 
 setText("");
 
+setLoading(false);
+
+
 }
+
+
 
 
 
@@ -120,10 +188,19 @@ return (
 <div className="mt-8">
 
 
-<div className="h-96 overflow-y-auto border rounded-xl p-5 space-y-3">
+
+<div className="
+h-96
+overflow-y-auto
+rounded-xl
+border
+p-5
+space-y-3
+">
 
 
 {
+
 messages.map((msg)=>(
 
 
@@ -133,20 +210,19 @@ key={msg.id}
 
 className={
 
-msg.sender_id===user.id
+msg.sender_id === user.id
 
 ?
 
-"bg-indigo-600 text-white p-3 rounded-xl ml-auto max-w-xs"
+"ml-auto max-w-xs rounded-xl bg-indigo-600 p-3 text-white"
 
 :
 
-"bg-gray-100 p-3 rounded-xl max-w-xs"
+"max-w-xs rounded-xl bg-gray-100 p-3"
 
 }
 
 >
-
 
 {msg.message}
 
@@ -159,6 +235,7 @@ msg.sender_id===user.id
 }
 
 
+
 </div>
 
 
@@ -166,7 +243,12 @@ msg.sender_id===user.id
 
 
 
-<div className="flex gap-3 mt-5">
+
+<div className="
+mt-5
+flex
+gap-3
+">
 
 
 <input
@@ -179,9 +261,16 @@ e=>setText(e.target.value)
 
 placeholder="Write a message..."
 
-className="flex-1 border rounded-xl p-4"
+className="
+flex-1
+rounded-xl
+border
+p-4
+"
 
 />
+
+
 
 
 
@@ -189,11 +278,25 @@ className="flex-1 border rounded-xl p-4"
 
 onClick={sendMessage}
 
-className="bg-indigo-600 text-white px-6 rounded-xl font-bold"
+disabled={loading}
+
+className="
+rounded-xl
+bg-indigo-600
+px-6
+font-bold
+text-white
+"
 
 >
 
-Send
+{
+loading
+?
+"Sending..."
+:
+"Send"
+}
 
 </button>
 
@@ -202,8 +305,10 @@ Send
 </div>
 
 
+
 </div>
 
-)
+);
+
 
 }
