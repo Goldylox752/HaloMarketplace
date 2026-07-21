@@ -1,421 +1,125 @@
-"use client";
-
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 
+export default function Navbar() {
 
-export default function Navbar(){
+  return (
 
+    <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
 
-const [user,setUser]=useState(null);
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
-const [open,setOpen]=useState(false);
 
+        {/* LOGO */}
 
+        <Link
+          href="/"
+          className="text-2xl font-black tracking-tight"
+        >
+          Halo Market
+        </Link>
 
-const supabase=createClient();
 
 
+        {/* DESKTOP NAV */}
 
+        <nav className="hidden items-center gap-6 text-sm font-semibold lg:flex">
 
 
-useEffect(()=>{
+          <Link
+            href="/marketplace"
+            className="hover:text-indigo-600"
+          >
+            Marketplace
+          </Link>
 
 
-async function getUser(){
+          <Link
+            href="/products"
+            className="hover:text-indigo-600"
+          >
+            Products
+          </Link>
 
 
-const {
+          <Link
+            href="/categories"
+            className="hover:text-indigo-600"
+          >
+            Categories
+          </Link>
 
-data:{
-user
 
-}
+          <Link
+            href="/sell"
+            className="hover:text-indigo-600"
+          >
+            Sell
+          </Link>
 
-}=await supabase.auth.getUser();
 
+          <Link
+            href="/seller"
+            className="hover:text-indigo-600"
+          >
+            Seller Center
+          </Link>
 
 
-setUser(user);
+          <Link
+            href="/support"
+            className="hover:text-indigo-600"
+          >
+            Support
+          </Link>
 
 
-}
+        </nav>
 
 
 
-getUser();
 
+        {/* ACCOUNT */}
 
+        <div className="hidden items-center gap-3 lg:flex">
 
-const {
 
-data:{
-subscription
+          <Link
+            href="/login"
+            className="rounded-xl border px-5 py-2 font-semibold hover:bg-gray-100"
+          >
+            Login
+          </Link>
 
-}
 
-}=supabase.auth.onAuthStateChange(
+          <Link
+            href="/signup"
+            className="rounded-xl bg-indigo-600 px-5 py-2 font-bold text-white hover:bg-indigo-700"
+          >
+            Sign Up
+          </Link>
 
-(event,session)=>{
 
+        </div>
 
-setUser(
-session?.user || null
-);
 
 
-}
+        {/* MOBILE BUTTON */}
 
-);
+        <button
+          className="rounded-lg border px-3 py-2 lg:hidden"
+        >
+          ☰
+        </button>
 
 
 
-return ()=>{
+      </div>
 
-subscription.unsubscribe();
 
-};
 
+    </header>
 
-},[]);
-
-
-
-
-
-
-async function logout(){
-
-
-await supabase.auth.signOut();
-
-
-window.location.href="/login";
-
-
-}
-
-
-
-
-
-
-
-return (
-
-<nav className="bg-white border-b sticky top-0 z-50">
-
-
-
-<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-
-
-
-
-{/* LOGO */}
-
-
-<Link
-
-href="/"
-
-className="text-3xl font-black text-indigo-600"
-
->
-
-Halo
-
-</Link>
-
-
-
-
-
-
-
-{/* DESKTOP MENU */}
-
-
-
-<div className="hidden md:flex items-center gap-6 font-semibold">
-
-
-
-<Link href="/products">
-
-Marketplace
-
-</Link>
-
-
-
-<Link href="/categories">
-
-Categories
-
-</Link>
-
-
-
-<Link href="/sell">
-
-Sell
-
-</Link>
-
-
-
-{
-user && (
-
-<>
-
-<Link href="/messages">
-
-💬 Messages
-
-</Link>
-
-
-
-<Link href="/favorites">
-
-❤️ Favorites
-
-</Link>
-
-
-
-<Link href="/dashboard">
-
-Dashboard
-
-</Link>
-
-
-
-</>
-
-)
-
-}
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* ACCOUNT */}
-
-
-
-<div className="flex items-center gap-4">
-
-
-{
-user ? (
-
-
-
-<button
-
-onClick={logout}
-
-className="bg-black text-white px-5 py-2 rounded-xl font-bold"
-
->
-
-Logout
-
-</button>
-
-
-
-):(
-
-
-
-<Link
-
-href="/login"
-
-className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold"
-
->
-
-Login
-
-</Link>
-
-
-
-)
-
-}
-
-
-
-
-<button
-
-onClick={()=>setOpen(!open)}
-
-className="md:hidden text-2xl"
-
->
-
-☰
-
-</button>
-
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* MOBILE MENU */}
-
-
-
-{
-
-open && (
-
-<div className="md:hidden px-6 pb-6 space-y-4 font-semibold">
-
-
-<Link
-
-href="/products"
-
-className="block"
-
->
-
-Marketplace
-
-</Link>
-
-
-
-<Link
-
-href="/categories"
-
-className="block"
-
->
-
-Categories
-
-</Link>
-
-
-
-<Link
-
-href="/sell"
-
-className="block"
-
->
-
-Sell
-
-</Link>
-
-
-
-
-{
-user && (
-
-<>
-
-<Link
-
-href="/messages"
-
-className="block"
-
->
-
-Messages
-
-</Link>
-
-
-
-<Link
-
-href="/favorites"
-
-className="block"
-
->
-
-Favorites
-
-</Link>
-
-
-
-<Link
-
-href="/dashboard"
-
-className="block"
-
->
-
-Dashboard
-
-</Link>
-
-
-
-</>
-
-)
-
-}
-
-
-
-</div>
-
-)
-
-}
-
-
-
-</nav>
-
-)
+  );
 
 }
