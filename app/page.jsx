@@ -4,71 +4,83 @@ import { createClient } from "@/lib/supabase/server";
 
 
 
-async function getProducts(search){
+async function getProducts(search, category, location){
 
-
-const supabase = await createClient();
-
-
-
-let query = supabase
-
-.from("products")
-
-.select(`
-id,
-title,
-price,
-image,
-location,
-slug
-`)
-
-.order("created_at", {
-ascending:false
-})
-
-.limit(12);
+  const supabase = await createClient();
 
 
 
+  let query = supabase
+    .from("products")
+    .select(`
+      id,
+      title,
+      price,
+      image,
+      location,
+      slug,
+      category
+    `)
+    .order("created_at", {
+      ascending:false
+    })
+    .limit(12);
 
 
-if(search){
 
-query = query.ilike(
-"title",
-`%${search}%`
-);
+  if(search){
+
+    query = query.ilike(
+      "title",
+      `%${search}%`
+    );
+
+  }
+
+
+
+  if(category){
+
+    query = query.eq(
+      "category",
+      category
+    );
+
+  }
+
+
+
+  if(location){
+
+    query = query.ilike(
+      "location",
+      `%${location}%`
+    );
+
+  }
+
+
+
+  const {
+    data:products,
+    error
+  } = await query;
+
+
+
+  if(error){
+
+    console.log(error);
+
+    return [];
+
+  }
+
+
+
+  return products || [];
 
 }
-
-
-
-
-const {
-data:products,
-error
-} = await query;
-
-
-
-
-
-if(error){
-
-console.log(error);
-
-return [];
-
-}
-
-
-
-return products || [];
-
-}
-
 
 
 
@@ -76,13 +88,12 @@ return products || [];
 
 export const metadata = {
 
-title:"Halo Marketplace | Buy & Sell Locally",
+  title:"Halo Marketplace | Buy & Sell Locally",
 
-description:
-"Buy, sell, and discover products on Halo Marketplace."
+  description:
+  "Buy, sell, and discover products on Halo Marketplace."
 
 };
-
 
 
 
@@ -94,8 +105,17 @@ export default async function Home({searchParams}){
 
 const search = searchParams?.search || "";
 
+const category = searchParams?.category || "";
 
-const products = await getProducts(search);
+const location = searchParams?.location || "";
+
+
+
+const products = await getProducts(
+  search,
+  category,
+  location
+);
 
 
 
@@ -107,10 +127,7 @@ return (
 
 
 
-
-
 {/* HERO */}
-
 
 
 <section className="
@@ -153,7 +170,6 @@ Buy, sell, and discover products from people near you.
 
 
 
-
 <div className="
 flex
 gap-4
@@ -182,7 +198,6 @@ Sell Something
 
 
 
-
 <Link
 
 href="/browse"
@@ -203,9 +218,7 @@ Browse Listings
 </Link>
 
 
-
 </div>
-
 
 
 </div>
@@ -219,9 +232,7 @@ Browse Listings
 
 
 
-
-
-{/* SEARCH */}
+{/* SEARCH FILTERS */}
 
 
 
@@ -238,12 +249,13 @@ px-6
 action="/"
 
 className="
-rounded-2xl
 bg-white
-p-6
+rounded-2xl
 shadow-xl
-flex
-gap-3
+p-6
+grid
+md:grid-cols-4
+gap-4
 "
 
 >
@@ -258,16 +270,97 @@ defaultValue={search}
 placeholder="Search products..."
 
 className="
-flex-1
-rounded-xl
 border
+rounded-xl
 px-5
 py-4
-text-lg
 outline-none
 "
 
 />
+
+
+
+
+
+<select
+
+name="category"
+
+defaultValue={category}
+
+className="
+border
+rounded-xl
+px-5
+py-4
+"
+
+>
+
+<option value="">
+All Categories
+</option>
+
+<option value="Electronics">
+Electronics
+</option>
+
+<option value="Vehicles">
+Vehicles
+</option>
+
+<option value="Home">
+Home
+</option>
+
+<option value="Gaming">
+Gaming
+</option>
+
+
+</select>
+
+
+
+
+
+
+<select
+
+name="location"
+
+defaultValue={location}
+
+className="
+border
+rounded-xl
+px-5
+py-4
+"
+
+>
+
+<option value="">
+All Locations
+</option>
+
+<option value="Alberta">
+Alberta
+</option>
+
+<option value="Ontario">
+Ontario
+</option>
+
+<option value="British Columbia">
+British Columbia
+</option>
+
+
+</select>
+
+
 
 
 
@@ -279,8 +372,9 @@ className="
 rounded-xl
 bg-black
 px-6
-text-white
+py-4
 font-semibold
+text-white
 "
 
 >
@@ -295,7 +389,6 @@ Search
 
 
 </section>
-
 
 
 
@@ -343,14 +436,14 @@ gap-4
 "Vehicles",
 "Home",
 "Gaming"
-].map(category=>(
+].map(item=>(
 
 
 <Link
 
-key={category}
+key={item}
 
-href={`/browse?category=${category}`}
+href={`/?category=${item}`}
 
 className="
 rounded-xl
@@ -362,7 +455,7 @@ hover:shadow-lg
 
 >
 
-{category}
+{item}
 
 </Link>
 
@@ -385,8 +478,7 @@ hover:shadow-lg
 
 
 
-
-{/* PRODUCTS */}
+{/* LISTINGS */}
 
 
 
@@ -399,10 +491,10 @@ pb-20
 
 
 <div className="
-mb-8
 flex
 justify-between
 items-center
+mb-8
 ">
 
 
@@ -412,9 +504,9 @@ font-bold
 ">
 
 {
-search
+search || category || location
 
-? `Results for "${search}"`
+? "Search Results"
 
 : "Latest Listings"
 
@@ -449,8 +541,6 @@ View All
 
 
 
-
-
 {
 products.length === 0 ? (
 
@@ -478,14 +568,12 @@ mt-3
 text-gray-500
 ">
 
-Try another search.
+Try changing your search filters.
 
 </p>
 
 
-
 </div>
-
 
 
 ):(
@@ -521,7 +609,6 @@ hover:shadow-xl
 "
 
 >
-
 
 
 <div className="
@@ -574,9 +661,7 @@ No Image
 }
 
 
-
 </div>
-
 
 
 
@@ -588,14 +673,13 @@ No Image
 
 <h3 className="
 truncate
-text-lg
 font-bold
+text-lg
 ">
 
 {product.title}
 
 </h3>
-
 
 
 
@@ -611,7 +695,6 @@ text-gray-500
 
 
 
-
 <p className="
 mt-3
 text-xl
@@ -624,15 +707,36 @@ ${Number(product.price).toLocaleString("en-CA")}
 
 
 
-</div>
+{
+product.category && (
 
+<span className="
+mt-3
+inline-block
+rounded-full
+bg-gray-100
+px-3
+py-1
+text-sm
+">
+
+{product.category}
+
+</span>
+
+)
+
+}
+
+
+
+</div>
 
 
 </Link>
 
 
 ))
-
 
 }
 
@@ -649,7 +753,6 @@ ${Number(product.price).toLocaleString("en-CA")}
 
 
 </section>
-
 
 
 
@@ -678,7 +781,6 @@ font-bold
 Ready to sell?
 
 </h2>
-
 
 
 <p className="
@@ -716,8 +818,6 @@ Post Item
 
 
 </section>
-
-
 
 
 
