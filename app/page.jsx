@@ -17,7 +17,8 @@ price,
 image,
 location,
 slug,
-category
+category,
+created_at
 `)
 .order("created_at",{
 ascending:false
@@ -28,7 +29,7 @@ ascending:false
 
 if(search){
 
-query=query.ilike(
+query = query.ilike(
 "title",
 `%${search}%`
 );
@@ -36,10 +37,9 @@ query=query.ilike(
 }
 
 
-
 if(category){
 
-query=query.eq(
+query = query.eq(
 "category",
 category
 );
@@ -47,10 +47,9 @@ category
 }
 
 
-
 if(location){
 
-query=query.ilike(
+query = query.ilike(
 "location",
 `%${location}%`
 );
@@ -59,17 +58,21 @@ query=query.ilike(
 
 
 
-const {data,error}=await query;
+const {
+data,
+error
+}=await query;
 
 
 
 if(error){
 
-console.log(error);
+console.error(error);
 
 return [];
 
 }
+
 
 
 return data || [];
@@ -83,12 +86,28 @@ return data || [];
 export const metadata={
 
 title:
-"Halo Marketplace | Buy & Sell Across Canada",
+"Halo Marketplace Canada | Buy & Sell Locally",
 
 description:
-"Buy and sell electronics, vehicles, home goods and more on Halo Marketplace."
+"Buy and sell electronics, vehicles, home goods and more across Canada with Halo Marketplace."
 
 };
+
+
+
+
+
+function formatPrice(price){
+
+return new Intl.NumberFormat(
+"en-CA",
+{
+style:"currency",
+currency:"CAD"
+}
+).format(price || 0);
+
+}
 
 
 
@@ -108,11 +127,50 @@ const location=params?.location || "";
 
 
 
-const products=await getProducts(
+const products = await getProducts(
 search,
 category,
 location
 );
+
+
+
+
+const categories=[
+
+{
+name:"Electronics",
+icon:"📱"
+},
+
+{
+name:"Vehicles",
+icon:"🚗"
+},
+
+{
+name:"Home",
+icon:"🏠"
+},
+
+{
+name:"Gaming",
+icon:"🎮"
+},
+
+{
+name:"Tools",
+icon:"🛠"
+},
+
+{
+name:"Sports",
+icon:"⚽"
+}
+
+];
+
+
 
 
 
@@ -121,12 +179,21 @@ return (
 <main className="min-h-screen bg-white">
 
 
+
 {/* HERO */}
 
-<section className="bg-black text-white px-6 py-24">
+<section className="
+bg-black
+text-white
+px-6
+py-24
+">
 
 
-<div className="max-w-6xl mx-auto">
+<div className="
+max-w-6xl
+mx-auto
+">
 
 
 <h1 className="
@@ -135,7 +202,7 @@ md:text-7xl
 font-black
 ">
 
-Halo Marketplace
+Canada's Modern Marketplace
 
 </h1>
 
@@ -148,13 +215,18 @@ text-xl
 text-gray-300
 ">
 
-Canada's modern marketplace to buy, sell, and discover products locally.
+Buy, sell, and discover products from local sellers across Canada.
 
 </p>
 
 
 
-<div className="flex gap-4 mt-8">
+
+<div className="
+flex
+gap-4
+mt-8
+">
 
 
 <Link
@@ -164,15 +236,15 @@ href="/sell"
 className="
 rounded-xl
 bg-white
-text-black
-px-7
+px-8
 py-4
 font-bold
+text-black
 "
 
 >
 
-Sell Something
+Start Selling
 
 </Link>
 
@@ -186,7 +258,7 @@ className="
 rounded-xl
 border
 border-white
-px-7
+px-8
 py-4
 font-bold
 "
@@ -201,6 +273,7 @@ Browse Listings
 </div>
 
 
+
 </div>
 
 
@@ -210,7 +283,10 @@ Browse Listings
 
 
 
-{/* TRUST STATS */}
+
+
+
+{/* TRUST */}
 
 <section className="
 max-w-6xl
@@ -225,30 +301,51 @@ py-12
 
 
 {[
-["10,000+","Products"],
-["5,000+","Sellers"],
-["Canada","Wide"],
-["Secure","Payments"]
-].map(stat=>(
+
+["Local","Marketplace"],
+
+["Secure","Checkout"],
+
+["Verified","Sellers"],
+
+["Canada","Wide"]
+
+].map(item=>(
 
 
 <div
-key={stat[1]}
+
+key={item[1]}
+
 className="
 rounded-2xl
 bg-gray-100
 p-6
 text-center
 "
+
 >
 
-<h3 className="text-3xl font-black">
-{stat[0]}
+
+<h3 className="
+text-3xl
+font-black
+">
+
+{item[0]}
+
 </h3>
 
-<p className="text-gray-500 mt-2">
-{stat[1]}
+
+<p className="
+mt-2
+text-gray-500
+">
+
+{item[1]}
+
 </p>
+
 
 
 </div>
@@ -265,8 +362,8 @@ text-center
 
 
 
-{/* SEARCH */}
 
+{/* SEARCH */}
 
 <section className="
 max-w-6xl
@@ -281,12 +378,12 @@ action="/"
 
 className="
 grid
-md:grid-cols-4
 gap-4
-bg-white
+md:grid-cols-4
 rounded-3xl
-shadow-xl
+bg-white
 p-6
+shadow-xl
 "
 
 >
@@ -301,13 +398,14 @@ defaultValue={search}
 placeholder="Search products..."
 
 className="
-border
 rounded-xl
+border
 px-5
 py-4
 "
 
 />
+
 
 
 
@@ -319,8 +417,8 @@ name="category"
 defaultValue={category}
 
 className="
-border
 rounded-xl
+border
 px-5
 py-4
 "
@@ -331,25 +429,18 @@ py-4
 All Categories
 </option>
 
-<option>
-Electronics
+{
+
+categories.map(cat=>(
+
+<option key={cat.name}>
+{cat.name}
 </option>
 
-<option>
-Vehicles
-</option>
+))
 
-<option>
-Home
-</option>
+}
 
-<option>
-Gaming
-</option>
-
-<option>
-Tools
-</option>
 
 </select>
 
@@ -364,8 +455,8 @@ name="location"
 defaultValue={location}
 
 className="
-border
 rounded-xl
+border
 px-5
 py-4
 "
@@ -388,8 +479,9 @@ Ontario
 British Columbia
 </option>
 
-
 </select>
+
+
 
 
 
@@ -399,8 +491,8 @@ British Columbia
 className="
 rounded-xl
 bg-black
-text-white
 font-bold
+text-white
 "
 
 >
@@ -422,8 +514,9 @@ Search
 
 
 
-{/* CATEGORIES */}
 
+
+{/* CATEGORIES */}
 
 <section className="
 max-w-6xl
@@ -434,14 +527,15 @@ py-16
 
 
 <h2 className="
+mb-8
 text-3xl
 font-black
-mb-8
 ">
 
 Explore Categories
 
 </h2>
+
 
 
 
@@ -453,21 +547,16 @@ gap-4
 ">
 
 
-{[
-"📱 Electronics",
-"🚗 Vehicles",
-"🏠 Home",
-"🎮 Gaming",
-"🛠 Tools",
-"⚽ Sports"
-].map(cat=>(
+{
+
+categories.map(cat=>(
 
 
 <Link
 
-key={cat}
+key={cat.name}
 
-href={`/?category=${cat.split(" ")[1]}`}
+href={`/?category=${cat.name}`}
 
 className="
 rounded-2xl
@@ -475,17 +564,37 @@ border
 p-6
 text-center
 font-bold
-hover:shadow-lg
+hover:shadow-xl
+transition
 "
 
 >
 
-{cat}
+
+<div className="
+text-3xl
+">
+
+{cat.icon}
+
+</div>
+
+
+<p className="mt-3">
+
+{cat.name}
+
+</p>
+
+
 
 </Link>
 
 
-))}
+))
+
+}
+
 
 
 </div>
@@ -499,8 +608,9 @@ hover:shadow-lg
 
 
 
-{/* PRODUCTS */}
 
+
+{/* LISTINGS */}
 
 <section className="
 max-w-6xl
@@ -511,9 +621,10 @@ pb-20
 
 
 <div className="
+mb-8
 flex
 justify-between
-mb-8
+items-center
 ">
 
 
@@ -522,16 +633,31 @@ text-3xl
 font-black
 ">
 
-{search || category ? "Results" : "Latest Listings"}
+{
+search || category
+
+?
+
+"Search Results"
+
+:
+
+"Latest Listings"
+
+}
 
 </h2>
+
 
 
 <Link
 
 href="/browse"
 
-className="text-indigo-600 font-bold"
+className="
+font-bold
+text-indigo-600
+"
 
 >
 
@@ -546,15 +672,58 @@ View All →
 
 
 
+
+
+{
+products.length === 0 ? (
+
+
 <div className="
-grid
-sm:grid-cols-2
-lg:grid-cols-4
-gap-6
+rounded-3xl
+bg-gray-100
+p-12
+text-center
 ">
 
 
-{products.map((product,index)=>(
+<h3 className="
+text-2xl
+font-bold
+">
+
+No listings found
+
+</h3>
+
+
+<p className="
+mt-3
+text-gray-500
+">
+
+Be the first person to sell on Halo.
+
+</p>
+
+
+</div>
+
+
+):(
+
+
+
+<div className="
+grid
+gap-6
+sm:grid-cols-2
+lg:grid-cols-4
+">
+
+
+{
+
+products.map(product=>(
 
 
 <Link
@@ -564,12 +733,12 @@ key={product.id}
 href={`/product/${product.slug}`}
 
 className="
-rounded-3xl
 overflow-hidden
-bg-white
+rounded-3xl
 border
-hover:shadow-xl
+bg-white
 transition
+hover:shadow-xl
 "
 
 >
@@ -582,7 +751,9 @@ bg-gray-100
 ">
 
 
-{product.image ? (
+{
+
+product.image ? (
 
 <Image
 
@@ -592,21 +763,18 @@ alt={product.title}
 
 fill
 
-priority={index < 4}
-
 className="object-cover"
 
 />
-
 
 ):(
 
 
 <div className="
 flex
+h-full
 items-center
 justify-center
-h-full
 text-5xl
 ">
 
@@ -614,11 +782,15 @@ text-5xl
 
 </div>
 
+)
 
-)}
+}
 
 
 </div>
+
+
+
 
 
 
@@ -626,8 +798,8 @@ text-5xl
 
 
 <h3 className="
-font-bold
 truncate
+font-bold
 ">
 
 {product.title}
@@ -637,6 +809,7 @@ truncate
 
 <p className="
 mt-2
+text-sm
 text-gray-500
 ">
 
@@ -652,7 +825,135 @@ text-xl
 font-black
 ">
 
-${Number(product.price).toLocaleString("en-CA")}
+{formatPrice(product.price)}
+
+</p>
+
+
+
+<span className="
+mt-3
+inline-block
+rounded-full
+bg-gray-100
+px-3
+py-1
+text-sm
+"
+
+>
+
+⭐ Verified Seller
+
+</span>
+
+
+</div>
+
+
+</Link>
+
+
+))
+
+
+}
+
+
+</div>
+
+
+)
+
+}
+
+
+</section>
+
+
+
+
+
+
+
+
+
+{/* HOW IT WORKS */}
+
+<section className="
+bg-gray-100
+py-16
+px-6
+">
+
+
+<div className="
+max-w-6xl
+mx-auto
+">
+
+
+<h2 className="
+text-3xl
+font-black
+text-center
+">
+
+How Halo Works
+
+</h2>
+
+
+
+<div className="
+mt-10
+grid
+md:grid-cols-4
+gap-6
+">
+
+
+[
+
+["1","Find an item"],
+
+["2","Message seller"],
+
+["3","Pay securely"],
+
+["4","Receive product"]
+
+].map(step=>(
+
+
+<div
+
+key={step[0]}
+
+className="
+rounded-2xl
+bg-white
+p-6
+text-center
+"
+
+
+>
+
+
+<h3 className="
+text-3xl
+font-black
+">
+
+{step[0]}
+
+</h3>
+
+
+<p className="mt-3">
+
+{step[1]}
 
 </p>
 
@@ -660,12 +961,10 @@ ${Number(product.price).toLocaleString("en-CA")}
 </div>
 
 
+))
 
-</Link>
 
-
-))}
-
+</div>
 
 
 </div>
@@ -679,15 +978,15 @@ ${Number(product.price).toLocaleString("en-CA")}
 
 
 
-{/* SELL CTA */}
 
+{/* SELL CTA */}
 
 <section className="
 bg-black
-text-white
-text-center
-py-20
 px-6
+py-20
+text-center
+text-white
 ">
 
 
@@ -701,12 +1000,13 @@ Start Selling Today
 </h2>
 
 
+
 <p className="
 mt-4
 text-gray-300
 ">
 
-Create your free listing and reach buyers across Canada.
+Create your listing and reach buyers across Canada.
 
 </p>
 
@@ -717,19 +1017,19 @@ Create your free listing and reach buyers across Canada.
 href="/sell"
 
 className="
-inline-block
 mt-8
+inline-block
+rounded-xl
 bg-white
-text-black
 px-8
 py-4
-rounded-xl
 font-bold
+text-black
 "
 
 >
 
-Create Listing
+Create Free Listing
 
 </Link>
 
